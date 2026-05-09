@@ -25,26 +25,123 @@ skills/
     assets/templates/
 ```
 
-## Install And Update
+## Install With gh skill
 
-This repository is intended to be installed from GitHub with `gh skill` and updated the same way. Target repositories may also keep a vendored copy of the skill so CI and local automation can use a stable repo-relative path.
+`gh skill` is part of GitHub CLI and is currently in public preview. Use GitHub CLI 2.90.0 or later.
 
 ```bash
-gh skill install OWNER/repo-knowledge-compiler
-gh skill update repo-kb
+gh --version
+gh skill --help
 ```
 
-Replace `OWNER` with the GitHub owner after publishing this repository.
+Always preview a skill before installing it:
 
-Recommended target-repo update flow:
+```bash
+gh skill preview makikub/repo-knowledge-compiler repo-kb
+```
+
+Install into the current repository for Claude Code:
+
+```bash
+cd /path/to/target-repo
+gh skill install makikub/repo-knowledge-compiler repo-kb --agent claude-code --scope project
+```
+
+Install for all of your Claude Code projects:
+
+```bash
+gh skill install makikub/repo-knowledge-compiler repo-kb --agent claude-code --scope user
+```
+
+Install into the current repository for Codex:
+
+```bash
+cd /path/to/target-repo
+gh skill install makikub/repo-knowledge-compiler repo-kb --agent codex --scope project
+```
+
+Pin to a tag or commit SHA when you want reproducible installs:
+
+```bash
+gh skill install makikub/repo-knowledge-compiler repo-kb --agent claude-code --scope project --pin v0.1.0
+gh skill install makikub/repo-knowledge-compiler repo-kb@v0.1.0 --agent claude-code --scope project
+```
+
+Use either `--pin` or `skill@version`, not both.
+
+Update installed skills:
+
+```bash
+gh skill update
+gh skill update repo-kb
+gh skill update --all
+```
+
+Pinned skills are skipped by normal update. Reinstall with a new `--pin` value when you want to move a pinned project forward.
+
+Search for related skills:
+
+```bash
+gh skill search code-review
+gh skill search repository-knowledge
+```
+
+## Project Setup After Install
+
+After installing the skill into a target repository, ask your agent:
+
+```text
+$repo-kb を使って、このリポジトリを初期化して
+```
+
+Or run the helper directly from the installed skill directory. Depending on the agent and scope, `gh skill` places the skill under an agent-specific directory such as `.claude/skills/repo-kb/` or a shared project directory such as `.agents/skills/repo-kb/`.
+
+Claude Code project install example:
+
+```bash
+python3 .claude/skills/repo-kb/scripts/repo_kb.py init
+python3 .claude/skills/repo-kb/scripts/repo_kb.py lint
+python3 .claude/skills/repo-kb/scripts/repo_kb.py compile --check
+```
+
+Shared project install example:
+
+```bash
+python3 .agents/skills/repo-kb/scripts/repo_kb.py init
+python3 .agents/skills/repo-kb/scripts/repo_kb.py lint
+python3 .agents/skills/repo-kb/scripts/repo_kb.py compile --check
+```
+
+This creates and manages:
+
+```text
+.repo-kb/
+CLAUDE.md
+REVIEW.md
+.claude/rules/generated/
+```
+
+Commit both the installed project skill and the generated repository knowledge files when you want teammates and CI to use the same behavior.
+
+## Optional Vendoring
+
+If you installed `repo-kb` at user scope but want a checked-in project copy, use the bundled `vendor` command:
+
+```bash
+python3 <installed-skill-dir>/scripts/repo_kb.py vendor --path .agents/skills/repo-kb --force
+python3 .agents/skills/repo-kb/scripts/repo_kb.py init
+```
+
+The usual update flow is:
 
 ```bash
 gh skill update repo-kb
 cd /path/to/target-repo
 python3 <installed-skill-dir>/scripts/repo_kb.py vendor --path .agents/skills/repo-kb --force
+python3 .agents/skills/repo-kb/scripts/repo_kb.py compile --check
 ```
 
-Commit the vendored `.agents/skills/repo-kb/` copy when you want repeatable CI behavior or when collaborators should share the same skill version. Commit `.repo-kb/` and generated outputs as normal repository knowledge.
+If you installed directly at project scope with `gh skill install ... --scope project`, this vendoring step is usually unnecessary.
 
 ## Local Smoke Test
 
