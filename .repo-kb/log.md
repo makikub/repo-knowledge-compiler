@@ -16,3 +16,15 @@
 - Raw source: `.repo-kb/raw/human-notes/2026-05-09-skill-distribution-decisions.md`
 - Kind: `human-note`
 - Source id: `2026-05-09-skill-distribution-decisions`
+
+## [2026-05-09] integrate | Repo Knowledge Compiler concept
+
+- Added raw source `.repo-kb/raw/human-notes/2026-05-09-repo-kb-concept.md`.
+- Added knowledge page `.repo-kb/pages/architecture/repo-knowledge-compiler-concept.md`.
+- Updated `.repo-kb/index.md`.
+
+## [2026-05-09] ingest | Repo Knowledge Compiler concept
+
+- Raw source: `.repo-kb/raw/human-notes/2026-05-09-repo-kb-concept.md`
+- Kind: `human-note`
+- Source id: `2026-05-09-repo-kb-concept`

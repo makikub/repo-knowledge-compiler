@@ -1,5 +1,9 @@
 # Repo Knowledge Index
 
+## Architecture
+
+- [Repo Knowledge Compiler concept](pages/architecture/repo-knowledge-compiler-concept.md): Why this project exists and how it adapts the LLM Wiki pattern to repository operations.
+
 ## Conventions
 
 - [Initial repository workflow](pages/conventions/initial-repository-workflow.md): Bootstrap conventions for using `.repo-kb`.
