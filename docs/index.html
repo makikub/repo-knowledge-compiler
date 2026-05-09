@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Repo Knowledge Compiler</title>
+    <meta
+      name="description"
+      content="Repo Knowledge Compiler は、PR レビューや運用メモを .repo-kb に蓄積し、LLM が使えるリポジトリ知識へ育てる gh skill です。"
+    >
+    <meta property="og:title" content="Repo Knowledge Compiler">
+    <meta
+      property="og:description"
+      content="gh skill でインストールできる、リポジトリ知識ベース運用のための skill。"
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="./assets/repo-kb-hero.png">
+    <meta name="theme-color" content="#15343b">
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #14272d;
+        --muted: #5d6f75;
+        --line: #d9e2df;
+        --paper: #fbfbf7;
+        --surface: #ffffff;
+        --teal: #0f766e;
+        --teal-dark: #0d4f4e;
+        --amber: #b66a12;
+        --sage: #dbe8df;
+        --shadow: 0 18px 50px rgb(20 39 45 / 14%);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.6;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      code,
+      pre {
+        font-family:
+          ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Monaco,
+          Consolas,
+          "Liberation Mono",
+          monospace;
+      }
+
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 1px solid rgb(217 226 223 / 82%);
+        background: rgb(251 251 247 / 88%);
+        backdrop-filter: blur(14px);
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: min(1120px, calc(100% - 32px));
+        min-height: 64px;
+        margin: 0 auto;
+        gap: 24px;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--ink);
+        font-weight: 780;
+        text-decoration: none;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        border-radius: 7px;
+        background: var(--ink);
+        color: #f7f3e8;
+        font-size: 15px;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .nav-links a {
+        text-decoration: none;
+      }
+
+      .nav-links a:hover {
+        color: var(--ink);
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 16px;
+        border: 1px solid transparent;
+        border-radius: 7px;
+        font-size: 14px;
+        font-weight: 720;
+        text-decoration: none;
+        transition:
+          transform 160ms ease,
+          box-shadow 160ms ease,
+          background-color 160ms ease;
+      }
+
+      .button:hover {
+        transform: translateY(-1px);
+      }
+
+      .button.primary {
+        background: var(--teal-dark);
+        color: #fffaf0;
+        box-shadow: 0 12px 30px rgb(13 79 78 / 20%);
+      }
+
+      .button.secondary {
+        border-color: var(--line);
+        background: rgb(255 255 255 / 72%);
+        color: var(--ink);
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        min-height: calc(100vh - 64px);
+        border-bottom: 1px solid var(--line);
+        background:
+          linear-gradient(90deg, rgb(251 251 247 / 98%) 0%, rgb(251 251 247 / 92%) 38%, rgb(251 251 247 / 48%) 66%),
+          url("./assets/repo-kb-hero.png") right center / min(68vw, 980px) auto no-repeat,
+          #eef3ef;
+      }
+
+      .hero-inner {
+        display: grid;
+        align-items: center;
+        width: min(1120px, calc(100% - 32px));
+        min-height: calc(100vh - 64px);
+        margin: 0 auto;
+        padding: 84px 0 120px;
+      }
+
+      .hero-copy {
+        max-width: 640px;
+      }
+
+      .eyebrow {
+        margin: 0 0 16px;
+        color: var(--teal);
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        max-width: 620px;
+        margin-bottom: 24px;
+        font-size: clamp(44px, 7vw, 78px);
+        line-height: 0.96;
+        letter-spacing: 0;
+      }
+
+      .lead {
+        max-width: 570px;
+        margin-bottom: 34px;
+        color: #40565c;
+        font-size: 19px;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .hero-strip {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        border-top: 1px solid rgb(217 226 223 / 78%);
+        background: rgb(255 255 255 / 74%);
+        backdrop-filter: blur(10px);
+      }
+
+      .strip-inner {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      .strip-item {
+        padding: 18px 22px;
+        border-left: 1px solid rgb(217 226 223 / 76%);
+      }
+
+      .strip-item:last-child {
+        border-right: 1px solid rgb(217 226 223 / 76%);
+      }
+
+      .strip-kicker {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 760;
+      }
+
+      .strip-value {
+        display: block;
+        margin-top: 4px;
+        font-weight: 780;
+      }
+
+      main section {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .section-inner {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 76px 0;
+      }
+
+      .section-heading {
+        max-width: 720px;
+        margin-bottom: 36px;
+      }
+
+      h2 {
+        margin-bottom: 14px;
+        font-size: clamp(30px, 5vw, 48px);
+        line-height: 1.05;
+        letter-spacing: 0;
+      }
+
+      .section-heading p {
+        color: var(--muted);
+        font-size: 18px;
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+
+      .step,
+      .command-block,
+      .feature,
+      .note {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: 0 1px 0 rgb(20 39 45 / 4%);
+      }
+
+      .step {
+        min-height: 200px;
+        padding: 22px;
+      }
+
+      .step-number {
+        display: inline-grid;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        margin-bottom: 18px;
+        border-radius: 50%;
+        background: var(--sage);
+        color: var(--teal-dark);
+        font-weight: 800;
+      }
+
+      .step h3,
+      .feature h3 {
+        margin-bottom: 10px;
+        font-size: 19px;
+        line-height: 1.25;
+      }
+
+      .step p,
+      .feature p,
+      .note p {
+        margin-bottom: 0;
+        color: var(--muted);
+      }
+
+      .install-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+        gap: 24px;
+        align-items: start;
+      }
+
+      .command-stack {
+        display: grid;
+        gap: 14px;
+      }
+
+      .command-block {
+        overflow: hidden;
+      }
+
+      .command-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 46px;
+        padding: 0 16px;
+        border-bottom: 1px solid var(--line);
+        color: #385056;
+        font-size: 13px;
+        font-weight: 780;
+      }
+
+      pre {
+        overflow-x: auto;
+        margin: 0;
+        padding: 18px 16px;
+        background: #10272b;
+        color: #edf8f5;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .note {
+        padding: 22px;
+      }
+
+      .note strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+
+      .feature {
+        min-height: 180px;
+        padding: 22px;
+      }
+
+      .usage {
+        background: #eef3ef;
+      }
+
+      .usage-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        gap: 24px;
+      }
+
+      .prompt-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .prompt {
+        border-left: 4px solid var(--amber);
+        padding: 16px 18px;
+        background: rgb(255 255 255 / 82%);
+      }
+
+      .prompt code {
+        color: var(--ink);
+        white-space: normal;
+      }
+
+      .cta {
+        background: var(--ink);
+        color: #fffaf0;
+      }
+
+      .cta .section-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+
+      .cta h2 {
+        max-width: 620px;
+        margin-bottom: 0;
+      }
+
+      .cta .button.secondary {
+        border-color: rgb(255 250 240 / 34%);
+        background: rgb(255 250 240 / 10%);
+        color: #fffaf0;
+      }
+
+      .site-footer {
+        background: var(--ink);
+        color: rgb(255 250 240 / 72%);
+      }
+
+      .footer-inner {
+        display: flex;
+        justify-content: space-between;
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 26px 0;
+        gap: 18px;
+        font-size: 14px;
+      }
+
+      .footer-inner a {
+        color: #fffaf0;
+      }
+
+      @media (max-width: 900px) {
+        .nav-links {
+          display: none;
+        }
+
+        .hero {
+          min-height: 760px;
+          background:
+            linear-gradient(180deg, rgb(251 251 247 / 98%) 0%, rgb(251 251 247 / 94%) 46%, rgb(251 251 247 / 30%) 74%),
+            url("./assets/repo-kb-hero.png") center bottom 78px / min(1040px, 132vw) auto no-repeat,
+            #eef3ef;
+        }
+
+        .hero-inner {
+          align-items: start;
+          min-height: 760px;
+          padding: 54px 0 300px;
+        }
+
+        .hero-copy {
+          max-width: 100%;
+        }
+
+        .strip-inner,
+        .flow,
+        .feature-grid,
+        .install-layout,
+        .usage-grid,
+        .cta .section-inner,
+        .footer-inner {
+          grid-template-columns: 1fr;
+        }
+
+        .strip-inner {
+          display: grid;
+        }
+
+        .strip-item,
+        .strip-item:last-child {
+          border-right: 0;
+          border-left: 0;
+        }
+
+        .strip-item + .strip-item {
+          border-top: 1px solid rgb(217 226 223 / 76%);
+        }
+
+        .flow,
+        .feature-grid,
+        .install-layout,
+        .usage-grid {
+          display: grid;
+        }
+
+        .cta .section-inner,
+        .footer-inner {
+          display: grid;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .nav,
+        .section-inner,
+        .strip-inner,
+        .footer-inner {
+          width: min(100% - 24px, 1120px);
+        }
+
+        .hero {
+          min-height: 790px;
+        }
+
+        .hero-inner {
+          min-height: 790px;
+          padding-top: 40px;
+        }
+
+        h1 {
+          font-size: 42px;
+        }
+
+        .lead {
+          font-size: 17px;
+        }
+
+        .hero-actions {
+          flex-direction: column;
+        }
+
+        .button {
+          width: 100%;
+        }
+
+        .section-inner {
+          padding: 56px 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav" aria-label="Primary navigation">
+        <a class="brand" href="#top" aria-label="Repo Knowledge Compiler">
+          <span class="brand-mark">rk</span>
+          <span>Repo Knowledge Compiler</span>
+        </a>
+        <div class="nav-links">
+          <a href="#install">Install</a>
+          <a href="#usage">Usage</a>
+          <a href="https://github.com/makikub/repo-knowledge-compiler">GitHub</a>
+        </div>
+      </nav>
+    </header>
+
+    <section class="hero" id="top">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow">gh skill for repository memory</p>
+          <h1>Repo Knowledge Compiler</h1>
+          <p class="lead">
+            PR レビュー、ADR、障害メモ、調査ログを <code>.repo-kb/</code> に集め、
+            LLM が読みやすいリポジトリ知識として育てるための skill です。
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#install">インストール方法を見る</a>
+            <a class="button secondary" href="https://github.com/makikub/repo-knowledge-compiler">GitHub を開く</a>
+          </div>
+        </div>
+      </div>
+      <div class="hero-strip" aria-label="Highlights">
+        <div class="strip-inner">
+          <div class="strip-item">
+            <span class="strip-kicker">Install</span>
+            <span class="strip-value"><code>gh skill install</code></span>
+          </div>
+          <div class="strip-item">
+            <span class="strip-kicker">Store</span>
+            <span class="strip-value"><code>.repo-kb/</code> に運用知を蓄積</span>
+          </div>
+          <div class="strip-item">
+            <span class="strip-kicker">Compile</span>
+            <span class="strip-value">agent guidance の材料を生成</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <main>
+      <section>
+        <div class="section-inner">
+          <div class="section-heading">
+            <h2>CLAUDE.md を wiki にしない</h2>
+            <p>
+              すべての知識を起動時コンテキストへ詰め込まず、raw evidence から synthesized pages、
+              generated references、必要な guidance へ段階的に昇格します。
+            </p>
+          </div>
+          <div class="flow">
+            <article class="step">
+              <span class="step-number">1</span>
+              <h3>Raw notes</h3>
+              <p>レビューコメント、事故メモ、ADR、デバッグログをまず証拠として保存します。</p>
+            </article>
+            <article class="step">
+              <span class="step-number">2</span>
+              <h3>Wiki pages</h3>
+              <p>繰り返し使える知識だけを、LLM と一緒にページや review aspects へ整理します。</p>
+            </article>
+            <article class="step">
+              <span class="step-number">3</span>
+              <h3>Compile</h3>
+              <p><code>lint</code> と <code>compile</code> で短い参照出力を生成し、drift を検出します。</p>
+            </article>
+            <article class="step">
+              <span class="step-number">4</span>
+              <h3>Promote</h3>
+              <p>月次や明示的な依頼時だけ、安定した知識を agent rules や docs へ反映します。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="install">
+        <div class="section-inner">
+          <div class="section-heading">
+            <h2>gh コマンドで入れる</h2>
+            <p>
+              GitHub CLI 2.90.0 以降の <code>gh skill</code> を使います。
+              まず preview してから、対象リポジトリへ project scope で入れるのがおすすめです。
+            </p>
+          </div>
+          <div class="install-layout">
+            <div class="command-stack">
+              <article class="command-block">
+                <div class="command-title">確認とプレビュー</div>
+                <pre><code>gh --version
+gh skill --help
+gh skill preview makikub/repo-knowledge-compiler repo-kb</code></pre>
+              </article>
+              <article class="command-block">
+                <div class="command-title">Codex 用に project scope でインストール</div>
+                <pre><code>cd /path/to/target-repo
+gh skill install makikub/repo-knowledge-compiler repo-kb \
+  --agent codex \
+  --scope project</code></pre>
+              </article>
+              <article class="command-block">
+                <div class="command-title">Claude Code 用に project scope でインストール</div>
+                <pre><code>cd /path/to/target-repo
+gh skill install makikub/repo-knowledge-compiler repo-kb \
+  --agent claude-code \
+  --scope project</code></pre>
+              </article>
+            </div>
+            <aside class="note">
+              <strong>再現性が必要なら pin する</strong>
+              <p>
+                チームや CI で同じ挙動にしたいときは
+                <code>--pin v0.1.0</code> や <code>repo-kb@v0.1.0</code>
+                を使います。通常の更新は <code>gh skill update repo-kb</code> です。
+              </p>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="usage" id="usage">
+        <div class="section-inner">
+          <div class="usage-grid">
+            <div class="section-heading">
+              <h2>使い方は、意図をそのまま伝える</h2>
+              <p>
+                ユーザーが Python パスを覚える必要はありません。
+                agent にやりたいことを伝え、必要な場面で skill の helper が決定的な処理を担当します。
+              </p>
+            </div>
+            <div class="prompt-list" aria-label="Example prompts">
+              <div class="prompt">
+                <code>$repo-kb を使って、このリポジトリを初期化して</code>
+              </div>
+              <div class="prompt">
+                <code>/repo-kb ingest DBトランザクション境界の教訓: 外部API呼び出しを中に入れない</code>
+              </div>
+              <div class="prompt">
+                <code>/repo-kb ask DBトランザクション境界の注意点は？</code>
+              </div>
+              <div class="prompt">
+                <code>/repo-kb promote 今月の安定した知識だけ CLAUDE.md / REVIEW.md / rules に反映して</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-inner">
+          <div class="section-heading">
+            <h2>CLI helper も同梱</h2>
+            <p>
+              repo-local に vendoring した場合は、対象リポジトリの中で構造チェックや compile を直接実行できます。
+            </p>
+          </div>
+          <div class="feature-grid">
+            <article class="feature">
+              <h3>Initialize</h3>
+              <p><code>.repo-kb/</code> の初期構造を作成します。</p>
+            </article>
+            <article class="feature">
+              <h3>Ingest</h3>
+              <p>人間のメモ、ディレクトリ snapshot、PR コメントを raw source として取り込みます。</p>
+            </article>
+            <article class="feature">
+              <h3>Lint and compile</h3>
+              <p>frontmatter、リンク、sources、generated drift を確認し、参照出力を更新します。</p>
+            </article>
+          </div>
+          <div class="command-stack" style="margin-top: 14px;">
+            <article class="command-block">
+              <div class="command-title">Repo-local helper examples</div>
+              <pre><code>.agents/skills/repo-kb/scripts/repo-kb init
+.agents/skills/repo-kb/scripts/repo-kb ingest --kind human-note --title "Review lesson" --note "Sanitized note."
+.agents/skills/repo-kb/scripts/repo-kb lint
+.agents/skills/repo-kb/scripts/repo-kb compile --check
+.agents/skills/repo-kb/scripts/repo-kb ask "What should I know before changing src/api?"</code></pre>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta">
+        <div class="section-inner">
+          <h2>リポジトリの記憶を、次の作業で使える形にする。</h2>
+          <a class="button secondary" href="https://github.com/makikub/repo-knowledge-compiler">README を読む</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <span>Repo Knowledge Compiler</span>
+        <a href="https://github.com/makikub/repo-knowledge-compiler">github.com/makikub/repo-knowledge-compiler</a>
+      </div>
+    </footer>
+  </body>
+</html>

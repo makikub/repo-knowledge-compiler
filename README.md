@@ -2,6 +2,8 @@
 
 Repo Knowledge Compiler adapts Karpathy's LLM Wiki pattern to software repositories.
 
+Landing page: https://makikub.github.io/repo-knowledge-compiler/
+
 Instead of putting every project rule into `CLAUDE.md` or `AGENTS.md`, each target repository keeps operational memory in `.repo-kb/`:
 
 - PR and review lessons
@@ -14,6 +16,11 @@ Instead of putting every project rule into `CLAUDE.md` or `AGENTS.md`, each targ
 Raw notes are the first landing place. Agents later synthesize durable patterns into wiki pages and review aspects, then compile concise reference outputs such as `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rule-references/`.
 
 Those generated files are reference material for a later promotion task. `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, and docs should be updated intentionally, for example during weekly or monthly repo-knowledge maintenance.
+
+## GitHub Pages
+
+The landing page lives in `docs/` and is deployed by `.github/workflows/pages.yml`.
+In the repository settings, configure Pages to use GitHub Actions, then push to `main`.
 
 ## Repository Shape
 
