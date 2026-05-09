@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import json
 import re
 import shutil
+import subprocess
 import textwrap
 import datetime as dt
 from pathlib import Path
@@ -106,31 +108,36 @@ def append_log(message: str) -> None:
     write(path, existing.rstrip() + "\n\n" + message.rstrip() + "\n")
 
 
-def command_ingest(args: argparse.Namespace) -> int:
+def write_raw_source(
+    *,
+    kind: str,
+    source_id: str,
+    title: str,
+    source_ref: str,
+    note: str,
+    force: bool = False,
+) -> Path:
     if not KB.exists():
-        command_init(args)
+        command_init(argparse.Namespace())
 
-    kind_dir = RAW_DIRS[args.kind]
-    source_id = args.id or f"{today()}-{slugify(args.title)}"
-    title = args.title
-    note = read_note(args).strip()
+    kind_dir = RAW_DIRS[kind]
     raw_path = KB / "raw" / kind_dir / f"{slugify(source_id)}.md"
-    if raw_path.exists() and not args.force:
+    if raw_path.exists() and not force:
         raise SystemExit(f"raw source already exists: {raw_path.relative_to(ROOT)}; pass --force to overwrite")
 
     raw_text = f"""---
 type: raw-source
-kind: {args.kind}
+kind: {kind}
 id: {source_id}
 date: {today()}
-source_ref: {args.source_ref or "user-provided"}
+source_ref: {source_ref}
 ---
 
 # {title}
 
 ## Original or Sanitized Note
 
-{note}
+{note.strip()}
 
 ## Extracted Claims
 
@@ -141,6 +148,24 @@ source_ref: {args.source_ref or "user-provided"}
 - TODO: Link this source from related `.repo-kb/pages/` or `.repo-kb/review-aspects/`.
 """
     write(raw_path, raw_text)
+    return raw_path
+
+
+def command_ingest(args: argparse.Namespace) -> int:
+    if not KB.exists():
+        command_init(args)
+
+    source_id = args.id or f"{today()}-{slugify(args.title)}"
+    title = args.title
+    note = read_note(args).strip()
+    raw_path = write_raw_source(
+        kind=args.kind,
+        source_id=source_id,
+        title=title,
+        source_ref=args.source_ref or "user-provided",
+        note=note,
+        force=args.force,
+    )
 
     created = [raw_path.relative_to(ROOT)]
     if args.as_review_aspect:
@@ -204,6 +229,311 @@ source_ref: {args.source_ref or "user-provided"}
     )
     for path in created:
         print(f"created {path}")
+    return 0
+
+
+def run_gh_json(arguments: list[str]) -> object:
+    try:
+        result = subprocess.run(
+            ["gh", *arguments],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError as exc:
+        raise SystemExit("gh CLI is required for PR comment ingestion") from exc
+    except subprocess.CalledProcessError as exc:
+        detail = exc.stderr.strip() or exc.stdout.strip()
+        raise SystemExit(f"gh command failed: {detail}") from exc
+    output = result.stdout.strip()
+    if not output:
+        return []
+    try:
+        return json.loads(output)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"gh returned invalid JSON: {exc}") from exc
+
+
+def current_repo_name() -> str:
+    data = run_gh_json(["repo", "view", "--json", "nameWithOwner"])
+    if not isinstance(data, dict) or not data.get("nameWithOwner"):
+        raise SystemExit("could not determine repository; pass --repo OWNER/REPO")
+    return str(data["nameWithOwner"])
+
+
+def parse_instant(value: str, *, end_of_day: bool = False) -> dt.datetime:
+    if re.match(r"^\d{4}-\d{2}-\d{2}$", value):
+        parsed_date = dt.date.fromisoformat(value)
+        parsed = dt.datetime.combine(parsed_date, dt.time.max if end_of_day else dt.time.min)
+        return parsed.replace(tzinfo=dt.timezone.utc)
+    normalized = value.replace("Z", "+00:00")
+    parsed = dt.datetime.fromisoformat(normalized)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt.timezone.utc)
+    return parsed.astimezone(dt.timezone.utc)
+
+
+def parse_github_time(value: str) -> dt.datetime:
+    return dt.datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(dt.timezone.utc)
+
+
+def in_period(value: str, since: dt.datetime, until: dt.datetime) -> bool:
+    timestamp = parse_github_time(value)
+    return since <= timestamp <= until
+
+
+def github_timestamp(value: dt.datetime) -> str:
+    return value.astimezone(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def gh_paginated(path: str, repo: str, *, since: dt.datetime | None = None) -> list[dict[str, object]]:
+    api_path = f"repos/{repo}/{path}"
+    if since:
+        api_path += f"?since={github_timestamp(since)}"
+    data = run_gh_json(["api", "--paginate", "--slurp", api_path])
+    if not isinstance(data, list):
+        raise SystemExit(f"unexpected gh API response for {path}")
+    if data and all(isinstance(item, list) for item in data):
+        flattened: list[dict[str, object]] = []
+        for page in data:
+            flattened.extend(item for item in page if isinstance(item, dict))
+        return flattened
+    return [item for item in data if isinstance(item, dict)]
+
+
+def issue_number_from_url(url: str) -> str:
+    return url.rstrip("/").rsplit("/", 1)[-1]
+
+
+def pull_request_numbers(repo: str, issue_numbers: set[str]) -> set[str]:
+    pull_numbers: set[str] = set()
+    for number in sorted(issue_numbers, key=int):
+        issue = run_gh_json(["api", f"repos/{repo}/issues/{number}"])
+        if isinstance(issue, dict) and issue.get("pull_request"):
+            pull_numbers.add(number)
+    return pull_numbers
+
+
+def format_comment_item(item: dict[str, object]) -> str:
+    user = item.get("user") if isinstance(item.get("user"), dict) else {}
+    author = user.get("login", "unknown") if isinstance(user, dict) else "unknown"
+    created = item.get("created_at", "unknown")
+    url = item.get("html_url", "")
+    body = str(item.get("body") or "").strip()
+    parts = [f"- Author: `{author}`", f"- Created: `{created}`"]
+    if url:
+        parts.append(f"- URL: {url}")
+    if item.get("path"):
+        location = str(item.get("path"))
+        if item.get("line"):
+            location += f":{item.get('line')}"
+        parts.append(f"- Location: `{location}`")
+    return "\n".join([*parts, "", body or "(empty comment)"])
+
+
+def collect_pr_comments(repo: str, since: dt.datetime, until: dt.datetime) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+    review_comments = [
+        item for item in gh_paginated("pulls/comments", repo, since=since)
+        if isinstance(item.get("created_at"), str) and in_period(str(item["created_at"]), since, until)
+    ]
+    issue_comments = [
+        item for item in gh_paginated("issues/comments", repo, since=since)
+        if isinstance(item.get("created_at"), str) and in_period(str(item["created_at"]), since, until)
+    ]
+    candidate_numbers = {
+        issue_number_from_url(str(item.get("issue_url")))
+        for item in issue_comments
+        if item.get("issue_url")
+    }
+    pr_numbers = pull_request_numbers(repo, candidate_numbers)
+    pr_issue_comments = [
+        item for item in issue_comments
+        if issue_number_from_url(str(item.get("issue_url"))) in pr_numbers
+    ]
+    return review_comments, pr_issue_comments
+
+
+def render_pr_comments_note(
+    repo: str,
+    since_label: str,
+    until_label: str,
+    review_comments: list[dict[str, object]],
+    issue_comments: list[dict[str, object]],
+) -> str:
+    lines = [
+        f"Repository: `{repo}`",
+        f"Period: `{since_label}` to `{until_label}`",
+        "",
+        "This note was collected from GitHub PR review comments and PR conversation comments.",
+        "",
+        "## PR Review Comments",
+        "",
+    ]
+    if not review_comments:
+        lines.append("- No PR review comments found in this period.")
+    for item in review_comments:
+        lines.extend(["### Review comment", "", format_comment_item(item), ""])
+    lines.extend(["", "## PR Conversation Comments", ""])
+    if not issue_comments:
+        lines.append("- No PR conversation comments found in this period.")
+    for item in issue_comments:
+        number = issue_number_from_url(str(item.get("issue_url", "")))
+        lines.extend([f"### PR #{number} conversation comment", "", format_comment_item(item), ""])
+    return "\n".join(lines).rstrip()
+
+
+def command_ingest_pr_comments(args: argparse.Namespace) -> int:
+    if not KB.exists():
+        command_init(args)
+
+    repo = args.repo or current_repo_name()
+    since = parse_instant(args.since)
+    until = parse_instant(args.until, end_of_day=True)
+    if since > until:
+        raise SystemExit("--since must be earlier than or equal to --until")
+
+    review_comments, issue_comments = collect_pr_comments(repo, since, until)
+    note = render_pr_comments_note(repo, args.since, args.until, review_comments, issue_comments)
+    title = args.title or f"PR comments {repo} {args.since} to {args.until}"
+    source_id = args.id or f"pr-comments-{repo.replace('/', '-')}-{args.since}-to-{args.until}"
+
+    if args.dry_run:
+        print(note)
+        return 0
+
+    raw_path = write_raw_source(
+        kind="review-comment",
+        source_id=source_id,
+        title=title,
+        source_ref=f"github:{repo}:pr-comments:{args.since}..{args.until}",
+        note=note,
+        force=args.force,
+    )
+    append_log(
+        "\n".join([
+            f"## [{today()}] ingest-pr-comments | {title}",
+            "",
+            f"- Raw source: `{raw_path.relative_to(ROOT)}`",
+            f"- Repository: `{repo}`",
+            f"- Period: `{args.since}` to `{args.until}`",
+            f"- PR review comments: `{len(review_comments)}`",
+            f"- PR conversation comments: `{len(issue_comments)}`",
+        ])
+    )
+    print(f"created {raw_path.relative_to(ROOT)}")
+    print(f"collected {len(review_comments)} PR review comments and {len(issue_comments)} PR conversation comments")
+    return 0
+
+
+def directory_files(path: Path, pattern: str) -> list[Path]:
+    if path.is_file():
+        return [path]
+    if not path.exists():
+        raise SystemExit(f"ingest directory path does not exist: {path}")
+    if not path.is_dir():
+        raise SystemExit(f"ingest directory path is not a file or directory: {path}")
+    return sorted(file_path for file_path in path.rglob(pattern) if file_path.is_file())
+
+
+def render_directory_note(source_path: Path, files: list[Path], max_bytes: int) -> str:
+    lines = [
+        f"Source path: `{display_path(source_path)}`",
+        f"Files captured: `{len(files)}`",
+        "",
+        "This note was collected from repository files for periodic repo-kb ingestion.",
+        "",
+    ]
+    if not files:
+        lines.append("- No files matched the requested path and pattern.")
+        return "\n".join(lines)
+    for file_path in files:
+        rel = display_path(file_path)
+        data = file_path.read_bytes()
+        truncated = len(data) > max_bytes
+        text = data[:max_bytes].decode("utf-8", errors="replace")
+        lines.extend([
+            f"## `{rel}`",
+            "",
+            "```text",
+            text.rstrip(),
+            "```",
+            "",
+        ])
+        if truncated:
+            lines.extend([f"_Truncated after {max_bytes} bytes._", ""])
+    return "\n".join(lines).rstrip()
+
+
+def command_ingest_directory(args: argparse.Namespace) -> int:
+    if not KB.exists():
+        command_init(args)
+
+    source_path = Path(args.path)
+    files = directory_files(source_path, args.glob)
+    if len(files) > args.max_files and not args.force:
+        raise SystemExit(f"{len(files)} files matched; pass --max-files or --force to ingest anyway")
+    selected = files if args.force else files[: args.max_files]
+    title = args.title or f"Directory ingest {display_path(source_path)}"
+    source_id = args.id or f"{today()}-{slugify(title)}"
+    note = render_directory_note(source_path, selected, args.max_bytes)
+
+    raw_path = write_raw_source(
+        kind=args.kind,
+        source_id=source_id,
+        title=title,
+        source_ref=f"repo-path:{display_path(source_path)}",
+        note=note,
+        force=args.force,
+    )
+    append_log(
+        "\n".join([
+            f"## [{today()}] ingest-directory | {title}",
+            "",
+            f"- Raw source: `{raw_path.relative_to(ROOT)}`",
+            f"- Source path: `{display_path(source_path)}`",
+            f"- Glob: `{args.glob}`",
+            f"- Files captured: `{len(selected)}`",
+        ])
+    )
+    print(f"created {raw_path.relative_to(ROOT)}")
+    print(f"captured {len(selected)} files from {display_path(source_path)}")
+    return 0
+
+
+def command_operations(_: argparse.Namespace) -> int:
+    print(
+        textwrap.dedent(
+            """
+            Repo KB operating model
+
+            1. Capture raw evidence first.
+               - Individual note or file:
+                 python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest --kind human-note --title "Title" --note "Sanitized note"
+                 python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest --kind log --title "Session log" --file /path/to/sanitized.md
+               - Repository directory snapshot:
+                 python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-directory --path docs/adr --glob "*.md" --kind adr
+               - PR comments for a period:
+                 python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-pr-comments --since YYYY-MM-DD --until YYYY-MM-DD --repo OWNER/REPO
+
+            2. Synthesize durable lessons.
+               Ask an agent to read recent .repo-kb/raw notes, update existing pages before creating new pages, and draft review aspects only when the lesson is repeatable.
+
+            3. Compile and lint weekly.
+               python3 .agents/skills/repo-kb/scripts/repo_kb.py lint
+               python3 .agents/skills/repo-kb/scripts/repo_kb.py compile
+               python3 .agents/skills/repo-kb/scripts/repo_kb.py compile --check
+
+            4. Promote intentionally.
+               Weekly or monthly, ask an agent to consult .repo-kb/index.md, raw notes, pages, review aspects, and generated references, then open a PR that updates only the concise guidance needed in CLAUDE.md, AGENTS.md, REVIEW.md, .claude/rules, or docs.
+
+            Suggested weekly agent prompt:
+              $repo-kb を使って、直近1週間の .repo-kb/raw とPRコメント取り込み結果を確認し、再発防止に効くものだけ pages/review-aspects に反映して。最後に lint と compile --check を実行して。
+
+            Suggested monthly promotion prompt:
+              $repo-kb を使って、.repo-kb のactiveな知識とgeneratedを確認し、CLAUDE.md / REVIEW.md / rules / docs に反映すべき高シグナルなものだけPR化して。
+            """
+        ).strip()
+    )
     return 0
 
 
@@ -466,11 +796,38 @@ def main(argv: list[str] | None = None) -> int:
     ingest.add_argument("--applies-to", action="append")
     ingest.add_argument("--review-question", action="append")
     ingest.set_defaults(func=command_ingest)
+    ingest_directory = sub.add_parser(
+        "ingest-directory",
+        help="capture matching files under a repository path as a raw source",
+    )
+    ingest_directory.add_argument("--path", required=True, help="file or directory to capture")
+    ingest_directory.add_argument("--glob", default="*.md", help="rglob pattern used when --path is a directory")
+    ingest_directory.add_argument("--kind", choices=sorted(RAW_DIRS), default="log")
+    ingest_directory.add_argument("--id")
+    ingest_directory.add_argument("--title")
+    ingest_directory.add_argument("--max-files", type=int, default=50)
+    ingest_directory.add_argument("--max-bytes", type=int, default=20000)
+    ingest_directory.add_argument("--force", action="store_true")
+    ingest_directory.set_defaults(func=command_ingest_directory)
+    ingest_pr_comments = sub.add_parser(
+        "ingest-pr-comments",
+        help="collect GitHub PR comments for a period and ingest them as a raw review-comment source",
+    )
+    ingest_pr_comments.add_argument("--repo", help="GitHub repository as OWNER/REPO; defaults to gh repo view")
+    ingest_pr_comments.add_argument("--since", required=True, help="inclusive start date or timestamp, for example 2026-05-01")
+    ingest_pr_comments.add_argument("--until", required=True, help="inclusive end date or timestamp, for example 2026-05-07")
+    ingest_pr_comments.add_argument("--id")
+    ingest_pr_comments.add_argument("--title")
+    ingest_pr_comments.add_argument("--force", action="store_true")
+    ingest_pr_comments.add_argument("--dry-run", action="store_true")
+    ingest_pr_comments.set_defaults(func=command_ingest_pr_comments)
     lint = sub.add_parser("lint")
     lint.set_defaults(func=command_lint)
     compile_cmd = sub.add_parser("compile")
     compile_cmd.add_argument("--check", action="store_true")
     compile_cmd.set_defaults(func=command_compile)
+    operations = sub.add_parser("operations", help="print recommended repo-kb operating workflows")
+    operations.set_defaults(func=command_operations)
     args = parser.parse_args(argv)
     return args.func(args)
 

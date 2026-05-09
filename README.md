@@ -208,12 +208,22 @@ Then use the repo-local copy:
 ```bash
 python3 .agents/skills/repo-kb/scripts/repo_kb.py init
 python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest --kind log --title "Debugging session" --note "Sanitized raw log."
+python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-directory --path docs/adr --glob "*.md" --kind adr
+python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
 python3 .agents/skills/repo-kb/scripts/repo_kb.py lint
 python3 .agents/skills/repo-kb/scripts/repo_kb.py compile
 python3 .agents/skills/repo-kb/scripts/repo_kb.py compile --check
 ```
 
 Use `$repo-kb` for semantic work such as deciding whether an ingested note has durable signal, merging it into existing pages, and promoting draft review aspects to active guidance.
+
+For operational help:
+
+```bash
+python3 .agents/skills/repo-kb/scripts/repo_kb.py operations
+```
+
+For weekly growth, ingest recent notes or selected directory snapshots, ingest PR comments for the target period, synthesize durable lessons into `.repo-kb/pages/` or `.repo-kb/review-aspects/`, then run lint and compile. `ingest-pr-comments` requires the `gh` CLI and stores PR review/conversation comments as raw review-comment evidence.
 
 For weekly or monthly promotion into project guidance:
 

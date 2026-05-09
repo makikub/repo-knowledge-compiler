@@ -32,6 +32,8 @@ Before editing a target repository:
 
 - **Initialize**: create `.repo-kb/` in a repository that does not have one yet.
 - **Ingest**: add a PR, issue, review comment, incident note, ADR, chat/log excerpt, or human note into `.repo-kb/raw/`; synthesize into pages only when there is durable signal.
+- **Ingest directory**: capture selected repository files or a directory snapshot into raw notes for periodic synthesis.
+- **Ingest PR comments**: collect GitHub PR review and conversation comments for a date range, then store them as raw review-comment evidence before synthesis.
 - **Query**: answer from `.repo-kb/index.md` and relevant pages, citing local paths.
 - **Lint**: check frontmatter, links, sources, generated drift, page size, and stale claims.
 - **Compile**: regenerate concise outputs from `.repo-kb/`.
@@ -48,9 +50,12 @@ The bundled script provides deterministic scaffolding and structural checks:
 python3 <installed-skill-dir>/scripts/repo_kb.py init
 python3 <installed-skill-dir>/scripts/repo_kb.py vendor
 python3 <installed-skill-dir>/scripts/repo_kb.py ingest --kind human-note --title "Title" --note "Sanitized note"
+python3 <installed-skill-dir>/scripts/repo_kb.py ingest-directory --path docs/adr --glob "*.md" --kind adr
+python3 <installed-skill-dir>/scripts/repo_kb.py ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
 python3 <installed-skill-dir>/scripts/repo_kb.py lint
 python3 <installed-skill-dir>/scripts/repo_kb.py compile
 python3 <installed-skill-dir>/scripts/repo_kb.py compile --check
+python3 <installed-skill-dir>/scripts/repo_kb.py operations
 ```
 
 When installed through `gh skill`, treat the GitHub repository as the update source. It is acceptable to copy the skill into each target repository as a vendored repo-local skill.
@@ -72,6 +77,8 @@ python3 <installed-skill-dir>/scripts/repo_kb.py vendor --path .agents/skills/re
 After vendoring, repository-local automation can use:
 
 ```bash
+python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-directory --path docs/adr --glob "*.md" --kind adr
+python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
 python3 .agents/skills/repo-kb/scripts/repo_kb.py lint
 python3 .agents/skills/repo-kb/scripts/repo_kb.py compile --check
 ```
@@ -90,6 +97,26 @@ Keep compiled files short and operational:
 Do not create, overwrite, or auto-populate `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or other agent instruction files during init, ingest, lint, or compile. Let the LLM update those project files intentionally during a separate promotion task by consulting `.repo-kb/index.md`, relevant `.repo-kb/raw/` notes, pages, and `.repo-kb/generated/`.
 
 Avoid turning `CLAUDE.md` into the wiki. If a project has one, it should point to `.repo-kb/` and include only high-signal rules needed at session start.
+
+## Periodic Operation
+
+For weekly repo-knowledge growth, ingest recent raw evidence, ask an agent to synthesize only repeatable lessons, then run lint and compile:
+
+```bash
+python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-directory --path docs/adr --glob "*.md" --kind adr
+python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
+python3 .agents/skills/repo-kb/scripts/repo_kb.py lint
+python3 .agents/skills/repo-kb/scripts/repo_kb.py compile
+python3 .agents/skills/repo-kb/scripts/repo_kb.py compile --check
+```
+
+Use `operations` when the user asks how to run or automate repo-kb:
+
+```bash
+python3 .agents/skills/repo-kb/scripts/repo_kb.py operations
+```
+
+For monthly or explicit promotion, consult `.repo-kb/index.md`, raw sources, pages, review aspects, and generated references, then open a focused PR for concise updates to `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or docs. Do not promote every raw note.
 
 ## Knowledge Governance
 

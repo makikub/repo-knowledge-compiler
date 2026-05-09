@@ -37,6 +37,28 @@ python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest \
   --note "Transactions must not wrap network I/O."
 ```
 
+Use period-based PR comment ingestion when the source is GitHub review or conversation feedback:
+
+```bash
+python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-pr-comments \
+  --since 2026-05-01 \
+  --until 2026-05-07 \
+  --repo OWNER/REPO
+```
+
+This requires the `gh` CLI. The command stores PR review comments and PR conversation comments in `.repo-kb/raw/review-comments/` as raw evidence. Use `--dry-run` to inspect the collected note before writing it. After ingestion, ask an agent to synthesize only durable, repeatable lessons into existing pages or draft review aspects.
+
+Use directory ingestion for periodic repository paths such as ADRs, runbooks, support notes, or hand-maintained wiki exports:
+
+```bash
+python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-directory \
+  --path docs/adr \
+  --glob "*.md" \
+  --kind adr
+```
+
+The command captures matching files into one raw source. Keep the source path narrow enough that future agents can understand why the snapshot was ingested.
+
 To create a draft review aspect while ingesting:
 
 ```bash
@@ -91,6 +113,29 @@ Use this only when the user asks for periodic maintenance, such as a weekly or m
 3. Ask before changing `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or docs if the requested scope is ambiguous.
 4. Keep promoted guidance concise and link back to `.repo-kb/` for background.
 5. Leave unresolved or low-confidence lessons in `.repo-kb/` rather than promoting them.
+
+## Periodic Maintenance
+
+Weekly maintenance should grow `.repo-kb/`, not project guidance files directly:
+
+1. Ingest selected directory notes, incident summaries, or sanitized session logs with `ingest --file` or `ingest-directory`.
+2. Ingest PR comments for the target period with `ingest-pr-comments --since YYYY-MM-DD --until YYYY-MM-DD`.
+3. Synthesize repeatable lessons into existing pages and review aspects. Keep uncertain items in raw notes or `Open Questions`.
+4. Run `lint`, `compile`, and `compile --check`.
+5. Commit `.repo-kb/` and generated reference changes together when they are intentional.
+
+Monthly or explicit promotion should update project guidance by PR:
+
+1. Read `.repo-kb/index.md`, active pages, active review aspects, and generated references.
+2. Compare them with current `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, and docs.
+3. Promote only stable, high-signal guidance needed at session start or review time.
+4. Keep the PR small and link back to `.repo-kb/` for detailed background.
+
+Use the helper's operations summary when a user asks how to operate the system:
+
+```bash
+python3 .agents/skills/repo-kb/scripts/repo_kb.py operations
+```
 
 ## Review PR
 
