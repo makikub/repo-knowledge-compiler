@@ -52,3 +52,9 @@
 - Raw source: `.repo-kb/raw/human-notes/2026-05-09-agent-rule-files-llm-maintained.md`
 - Kind: `human-note`
 - Source id: `2026-05-09-agent-rule-files-llm-maintained`
+
+## [2026-05-09] ingest | Repo-kb as raw log wiki
+
+- Raw source: `.repo-kb/raw/human-notes/2026-05-09-repo-kb-as-raw-log-wiki.md`
+- Kind: `human-note`
+- Source id: `2026-05-09-repo-kb-as-raw-log-wiki`

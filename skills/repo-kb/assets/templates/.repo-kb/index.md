@@ -1,9 +1,13 @@
 # Repo Knowledge Index
 
-## Conventions
+## Raw Sources
 
-- [Initial repository workflow](pages/conventions/initial-repository-workflow.md): Bootstrap conventions for using `.repo-kb`.
+- Add PR notes, review comments, incidents, ADRs, debugging logs, and human notes under `raw/` first.
 
-## Review Aspects
+## Wiki Pages
 
-- [Generated guidance drift](review-aspects/correctness/generated-guidance-drift.md): Ensure generated guidance is updated from source knowledge.
+- [Initial repository workflow](pages/conventions/initial-repository-workflow.md): Draft bootstrap notes for using `.repo-kb`.
+
+## Draft Review Aspects
+
+- [Knowledge promotion drift](review-aspects/correctness/knowledge-promotion-drift.md): Optional check for maintenance PRs that promote `.repo-kb` knowledge into project guidance.

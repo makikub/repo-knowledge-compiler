@@ -6,10 +6,10 @@
 2. If the target repository should carry its own skill copy, vendor the skill into `.agents/skills/repo-kb/`.
 3. Create `.repo-kb/` from templates if missing.
 4. Do not create or overwrite `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or other agent instruction files automatically.
-5. Seed `index.md` with discovered domains, conventions, and review topics.
-6. Seed `pages/conventions/` with stable repo practices only.
-7. Seed `review-aspects/` only for review checks that have evidence or explicit user confirmation.
-8. Compile reference outputs and ask the user to review them before updating project guidance files.
+5. Seed `index.md` as a map of the wiki, not as mandatory project guidance.
+6. Keep seeded pages and review aspects as drafts unless the user explicitly confirms they are active policy.
+7. Compile reference outputs only for `.repo-kb/generated/`.
+8. Ask before any separate promotion into project guidance files or docs.
 
 Vendored setup:
 
@@ -20,13 +20,13 @@ python3 .agents/skills/repo-kb/scripts/repo_kb.py init
 
 ## Ingest
 
-1. Classify the source: `pr`, `issue`, `incident`, `adr`, `review-comment`, or `human-note`.
-2. Save a sanitized raw note under `.repo-kb/raw/<kind>/`.
-3. Extract durable claims, decisions, review triggers, and anti-patterns.
-4. Update existing pages before creating new pages.
-5. Add source references in frontmatter or a `Sources` section.
+1. Classify the source: `pr`, `issue`, `incident`, `adr`, `review-comment`, `log`, or `human-note`.
+2. Save a sanitized raw note under `.repo-kb/raw/<kind>/`. Preserve enough original context that future agents can re-interpret it.
+3. Extract tentative claims, decisions, review triggers, and anti-patterns into the raw note.
+4. Update existing pages before creating new pages when the note contains durable signal.
+5. Add source references in frontmatter or a `Sources` section whenever synthesis is updated.
 6. Update `.repo-kb/index.md` and append `.repo-kb/log.md`.
-7. Run lint and compile if generated outputs should change.
+7. Run lint and compile if generated reference outputs should change.
 
 Use the helper for deterministic raw-source capture:
 
@@ -81,6 +81,16 @@ Check:
 4. Compile path-scoped rule references into `.repo-kb/generated/rules/*.md` when applicable.
 5. Do not write `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or other agent instruction files; use generated files as references for intentional LLM edits.
 6. Keep generated files reproducible. Manual edits belong in `.repo-kb/`.
+
+## Promote To Project Guidance
+
+Use this only when the user asks for periodic maintenance, such as a weekly or monthly repo knowledge review.
+
+1. Read `.repo-kb/index.md`, relevant raw sources, pages, review aspects, and generated references.
+2. Identify stable lessons that should affect future agents or human maintainers.
+3. Ask before changing `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or docs if the requested scope is ambiguous.
+4. Keep promoted guidance concise and link back to `.repo-kb/` for background.
+5. Leave unresolved or low-confidence lessons in `.repo-kb/` rather than promoting them.
 
 ## Review PR
 

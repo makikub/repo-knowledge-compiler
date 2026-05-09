@@ -2,7 +2,7 @@
 type: knowledge-page
 id: initial-repository-workflow
 title: Initial repository workflow
-status: active
+status: draft
 sources:
   - kind: human-note
     id: bootstrap
@@ -13,22 +13,24 @@ last_verified: bootstrap
 
 ## Summary
 
-Use `.repo-kb/` as the durable source for repository conventions, review aspects, design decisions, and operational lessons. Compile concise outputs from it instead of manually expanding agent instruction files.
+Use `.repo-kb/` as the durable LLM wiki for repository memory. Put raw PR notes, review comments, incidents, design discussions, debugging logs, and human notes here first; promote only stable lessons into project guidance or docs during explicit maintenance.
 
 ## Current Practice
 
-- Add durable knowledge to `.repo-kb/pages/` or `.repo-kb/review-aspects/`.
-- Keep raw evidence in `.repo-kb/raw/` when it is safe to store.
-- Regenerate `REVIEW.md` and `.repo-kb/generated/` after knowledge changes.
+- Add raw evidence to `.repo-kb/raw/` when it is safe to store.
+- Synthesize durable patterns into `.repo-kb/pages/` or `.repo-kb/review-aspects/`.
+- Compile `.repo-kb/generated/` as reference material.
+- Update `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or docs only during an explicit promotion task.
 
 ## Rationale
 
-Agent context files stay useful when they are concise. The larger knowledge base can grow in Markdown while compiled outputs remain targeted.
+Agent context files stay useful when they are concise. The larger knowledge base can preserve messy history and raw context while promoted guidance remains targeted.
 
 ## Related Pages
 
-- [Generated guidance drift](../../review-aspects/correctness/generated-guidance-drift.md)
+- [Knowledge promotion drift](../../review-aspects/correctness/knowledge-promotion-drift.md)
 
 ## Open Questions
 
-- Which existing repository documents should be ingested first?
+- Which existing repository documents or logs should be ingested first?
+- What cadence should this repository use for promoting stable lessons into guidance or docs?

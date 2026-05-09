@@ -14,6 +14,7 @@
     incidents/
     adr/
     review-comments/
+    logs/
     human-notes/
   pages/
     architecture/
@@ -109,6 +110,8 @@ source_ref: user-provided
 ## Extracted Claims
 ```
 
+Raw sources are the first landing place for operational memory: PR notes, review comments, incident timelines, ADRs, chat summaries, debugging logs, and human notes. They should preserve the original context in sanitized form. Knowledge pages and review aspects are later synthesis over raw sources; they are not required for every raw note.
+
 ## Status Values
 
 - `active`: currently valid
@@ -118,3 +121,5 @@ source_ref: user-provided
 ## Compile Policy
 
 Only `active` knowledge pages and review aspects should affect generated outputs by default. Draft pages may be referenced manually but should not become mandatory review guidance.
+
+Generated outputs under `.repo-kb/generated/` are reference material for later LLM-guided promotion. They are not automatically copied to `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or docs.

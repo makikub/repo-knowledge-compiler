@@ -2,16 +2,18 @@
 
 Repo Knowledge Compiler adapts Karpathy's LLM Wiki pattern to software repositories.
 
-Instead of putting every project rule into `CLAUDE.md` or `AGENTS.md`, each target repository keeps durable operational knowledge in `.repo-kb/`:
+Instead of putting every project rule into `CLAUDE.md` or `AGENTS.md`, each target repository keeps operational memory in `.repo-kb/`:
 
 - PR and review lessons
 - incidents and bug patterns
 - architecture decisions
+- raw debugging logs and discussion notes
 - conventions and invariants
 - code-review aspects
-- generated agent guidance
 
-The skill then compiles that knowledge into concise reference outputs such as `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rules/`.
+Raw notes are the first landing place. Agents later synthesize durable patterns into wiki pages and review aspects, then compile concise reference outputs such as `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rules/`.
+
+Those generated files are reference material for a later promotion task. `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, and docs should be updated intentionally, for example during weekly or monthly repo-knowledge maintenance.
 
 ## Repository Shape
 
@@ -154,7 +156,7 @@ This creates and manages:
 .repo-kb/
 ```
 
-`CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, and other agent instruction files are not created or overwritten automatically. Ask the agent to update them intentionally by consulting `.repo-kb/index.md`, `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rules/`.
+`CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, and other agent instruction files are not created, overwritten, or auto-populated. Ask the agent to update them intentionally during a separate maintenance task by consulting `.repo-kb/index.md`, relevant `.repo-kb/raw/` notes, `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rules/`.
 
 Commit both the installed project skill and the repository knowledge files when you want teammates and CI to use the same behavior.
 
@@ -205,16 +207,22 @@ Then use the repo-local copy:
 
 ```bash
 python3 .agents/skills/repo-kb/scripts/repo_kb.py init
-python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest --kind human-note --title "Review lesson" --note "Sanitized note."
+python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest --kind log --title "Debugging session" --note "Sanitized raw log."
 python3 .agents/skills/repo-kb/scripts/repo_kb.py lint
 python3 .agents/skills/repo-kb/scripts/repo_kb.py compile
 python3 .agents/skills/repo-kb/scripts/repo_kb.py compile --check
 ```
 
-Use `$repo-kb` for semantic work such as deciding where an ingested note belongs, merging it into existing pages, and promoting draft review aspects to active guidance.
+Use `$repo-kb` for semantic work such as deciding whether an ingested note has durable signal, merging it into existing pages, and promoting draft review aspects to active guidance.
+
+For weekly or monthly promotion into project guidance:
+
+```text
+$repo-kb を使って、.repo-kb の最近の raw/page/review-aspect を確認し、必要なものだけ CLAUDE.md / rules / docs に反映して
+```
 
 ## Design Position
 
-The plugin is intentionally repo-agnostic. It provides workflows, templates, and structural checks. Repository-specific knowledge lives in each target repo's `.repo-kb/` and is reviewed like code.
+The plugin is intentionally repo-agnostic. It provides workflows, templates, and structural checks. Repository-specific raw logs, wiki pages, and review aspects live in each target repo's `.repo-kb/` and are reviewed like code.
 
-Generated files should not become the source of truth. Update `.repo-kb/`, then compile.
+Generated files should not become the source of truth or be copied into agent rules automatically. Update `.repo-kb/`, compile, then promote concise guidance only when needed.

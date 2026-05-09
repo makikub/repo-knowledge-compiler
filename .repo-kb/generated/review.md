@@ -4,12 +4,12 @@ This file is generated from `.repo-kb/review-aspects/`. Update review aspects, t
 
 ## High-Priority Checks
 
-### Generated guidance drift
+### Knowledge promotion drift
 Severity: `medium`
-Applies to: `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/**`, `.repo-kb/**`
+Applies to: `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/**`, `docs/**`, `.repo-kb/**`
 
-- Was the source knowledge updated before generated references or project guidance changed?
-- Does `repo-kb compile --check` pass for `.repo-kb/generated/`?
-- Are review aspects backed by sources or explicitly marked as team policy?
-- If agent instruction files changed, does the diff clearly follow `.repo-kb/index.md` or `.repo-kb/generated/`?
-Source: `.repo-kb/review-aspects/correctness/generated-guidance-drift.md`
+- Did the update consult relevant `.repo-kb/raw/` notes, pages, and generated references?
+- Is the promoted guidance concise enough for startup context?
+- Are low-confidence or unresolved lessons left in `.repo-kb/` instead of being promoted?
+- Does `repo-kb compile --check` pass when generated references are expected to change?
+Source: `.repo-kb/review-aspects/correctness/knowledge-promotion-drift.md`

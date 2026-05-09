@@ -4,6 +4,10 @@
 
 - [Repo Knowledge Compiler concept](pages/architecture/repo-knowledge-compiler-concept.md): Why this project exists and how it adapts the LLM Wiki pattern to repository operations.
 
+## Raw Sources
+
+- Store PR notes, review comments, incidents, debugging logs, design discussions, and human notes under `raw/` first.
+
 ## Conventions
 
 - [Initial repository workflow](pages/conventions/initial-repository-workflow.md): Bootstrap conventions for using `.repo-kb`.
@@ -12,4 +16,4 @@
 
 ## Review Aspects
 
-- [Generated guidance drift](review-aspects/correctness/generated-guidance-drift.md): Ensure generated guidance is updated from source knowledge.
+- [Knowledge promotion drift](review-aspects/correctness/knowledge-promotion-drift.md): Ensure project guidance updates are intentionally promoted from `.repo-kb` sources.

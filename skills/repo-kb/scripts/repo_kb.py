@@ -22,6 +22,7 @@ RAW_DIRS = {
     "incident": "incidents",
     "adr": "adr",
     "review-comment": "review-comments",
+    "log": "logs",
     "human-note": "human-notes",
 }
 
@@ -133,7 +134,7 @@ source_ref: {args.source_ref or "user-provided"}
 
 ## Extracted Claims
 
-- TODO: Extract durable claims, decisions, review triggers, and open questions.
+- TODO: Extract tentative claims, decisions, review triggers, and open questions.
 
 ## Integration Notes
 

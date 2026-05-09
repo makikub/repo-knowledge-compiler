@@ -1,6 +1,6 @@
 ---
 name: repo-kb
-description: Use this skill when initializing, maintaining, querying, linting, or compiling a repository knowledge base that turns PRs, reviews, incidents, ADRs, conventions, and implicit team knowledge into CLAUDE.md, REVIEW.md, .claude/rules, AGENTS.md, or review guidance. Also use it when adapting Karpathy's LLM Wiki pattern to development repositories or when asked to grow repo-local AI instructions from operational knowledge.
+description: Use this skill when initializing, maintaining, querying, linting, or compiling a repository knowledge base that stores raw PR/review/incident/ADR/conversation notes and turns them into an LLM-maintained repo wiki. Also use it when periodically promoting durable lessons from that wiki into CLAUDE.md, REVIEW.md, .claude/rules, AGENTS.md, docs, or review guidance.
 license: MIT
 ---
 
@@ -8,14 +8,16 @@ license: MIT
 
 ## Purpose
 
-Maintain `.repo-kb/` as a persistent Markdown knowledge base for a software repository, then compile the durable parts into concise reference outputs such as `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rules/`.
+Maintain `.repo-kb/` as a persistent Markdown knowledge base for a software repository. It is an LLM wiki: raw operational logs go in first, then agents synthesize them into pages and review aspects, and only later promote stable lessons into project guidance or docs when the user asks for that maintenance.
+
+Compilation creates reference outputs such as `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rules/`. These outputs are inputs for a future LLM-guided update, not files to copy automatically into `CLAUDE.md`, `REVIEW.md`, `.claude/rules/`, `AGENTS.md`, or docs.
 
 The core pattern is:
 
-- raw sources are immutable evidence
-- knowledge pages are LLM-maintained synthesis
-- generated outputs are deterministic projections
-- humans review knowledge changes through normal repo review
+- raw sources are the primary evidence and may contain the messy original context
+- knowledge pages are LLM-maintained synthesis over those raw sources
+- generated outputs are deterministic reference material for later promotion
+- project guidance files and docs are updated intentionally during weekly/monthly or user-requested maintenance
 
 ## First Checks
 
@@ -29,10 +31,11 @@ Before editing a target repository:
 ## Operation Selection
 
 - **Initialize**: create `.repo-kb/` in a repository that does not have one yet.
-- **Ingest**: add a PR, issue, review comment, incident note, ADR, or human note into `.repo-kb/raw/` and integrate it into pages.
+- **Ingest**: add a PR, issue, review comment, incident note, ADR, chat/log excerpt, or human note into `.repo-kb/raw/`; synthesize into pages only when there is durable signal.
 - **Query**: answer from `.repo-kb/index.md` and relevant pages, citing local paths.
 - **Lint**: check frontmatter, links, sources, generated drift, page size, and stale claims.
 - **Compile**: regenerate concise outputs from `.repo-kb/`.
+- **Promote**: during explicit weekly/monthly maintenance, consult `.repo-kb/` and generated references, then intentionally update `CLAUDE.md`, rules, or docs.
 - **Review PR**: read the diff and only the relevant review aspects, then review with repo-specific criteria.
 
 Use `references/operations.md` for detailed workflows and `references/schema.md` for page contracts.
@@ -84,7 +87,7 @@ Keep compiled files short and operational:
 - `.repo-kb/generated/rules/*.md`: reference material for updating `.claude/rules/` or other agent rule files.
 - `.repo-kb/generated/*`: intermediate compiled outputs and summaries.
 
-Do not create or overwrite `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or other agent instruction files automatically. Let the LLM update those project files intentionally by consulting `.repo-kb/index.md` and `.repo-kb/generated/`.
+Do not create, overwrite, or auto-populate `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or other agent instruction files during init, ingest, lint, or compile. Let the LLM update those project files intentionally during a separate promotion task by consulting `.repo-kb/index.md`, relevant `.repo-kb/raw/` notes, pages, and `.repo-kb/generated/`.
 
 Avoid turning `CLAUDE.md` into the wiki. If a project has one, it should point to `.repo-kb/` and include only high-signal rules needed at session start.
 
