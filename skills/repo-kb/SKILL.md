@@ -1,6 +1,7 @@
 ---
 name: repo-kb
 description: Use this skill when initializing, maintaining, querying, linting, or compiling a repository knowledge base that turns PRs, reviews, incidents, ADRs, conventions, and implicit team knowledge into CLAUDE.md, REVIEW.md, .claude/rules, AGENTS.md, or review guidance. Also use it when adapting Karpathy's LLM Wiki pattern to development repositories or when asked to grow repo-local AI instructions from operational knowledge.
+license: MIT
 ---
 
 # Repo Knowledge Compiler

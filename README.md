@@ -86,6 +86,42 @@ gh skill search code-review
 gh skill search repository-knowledge
 ```
 
+## Publish
+
+Publishing is not required for basic installation. Because this repository is public and follows the `skills/*/SKILL.md` convention, users can install directly from the repository:
+
+```bash
+gh skill install makikub/repo-knowledge-compiler repo-kb --agent claude-code --scope project
+```
+
+Use `gh skill publish` when you want GitHub CLI to validate the skill, add release-oriented metadata, choose a version tag, and create a GitHub release. This is useful when you want stable versioned installs such as `--pin v0.1.0`.
+
+Validate without publishing:
+
+```bash
+gh skill publish --dry-run
+```
+
+Publish interactively:
+
+```bash
+gh skill publish
+```
+
+Publish non-interactively with a tag:
+
+```bash
+gh skill publish --tag v0.1.0
+```
+
+If validation reports fixable metadata issues, run:
+
+```bash
+gh skill publish --fix
+```
+
+Review and commit any changes from `--fix`, then run `gh skill publish --dry-run` again.
+
 ## Project Setup After Install
 
 After installing the skill into a target repository, ask your agent:
