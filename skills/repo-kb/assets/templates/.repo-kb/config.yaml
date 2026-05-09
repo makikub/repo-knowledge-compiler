@@ -3,7 +3,7 @@ repo:
 outputs:
   claude_context: .repo-kb/generated/claude-context.md
   review_guidance: .repo-kb/generated/review.md
-  rule_references_dir: .repo-kb/generated/rules
+  rule_references_dir: .repo-kb/generated/rule-references
 review:
   default_language: ja
   severity_levels:

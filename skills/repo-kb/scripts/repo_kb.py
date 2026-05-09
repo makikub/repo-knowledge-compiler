@@ -58,8 +58,8 @@ def copy_template(relative: str, destination: Path) -> None:
 
 def command_init(_: argparse.Namespace) -> int:
     copy_template(".repo-kb", KB)
-    print("initialized .repo-kb templates")
-    print("project guidance files are not created automatically; use .repo-kb/generated/ as reference material")
+    print("initialized .repo-kb templates only")
+    print("project guidance files and .claude/rules are not created automatically; use .repo-kb/generated/ as reference material")
     return 0
 
 
@@ -75,7 +75,7 @@ def command_vendor(args: argparse.Namespace) -> int:
     shutil.copytree(
         SKILL_DIR,
         destination,
-        ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store"),
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store", ".claude"),
     )
     print(f"vendored repo-kb skill to {display_path(destination)}")
     return 0
@@ -382,7 +382,7 @@ def compile_rule_references() -> dict[Path, str]:
             "",
         ])
         lines.append(questions or "Review the source aspect before making changes in these paths.")
-        outputs[KB / "generated" / "rules" / f"{slug}.md"] = "\n".join(lines).rstrip() + "\n"
+        outputs[KB / "generated" / "rule-references" / f"{slug}.md"] = "\n".join(lines).rstrip() + "\n"
     return outputs
 
 
@@ -395,8 +395,23 @@ def desired_outputs() -> dict[Path, str]:
     return outputs
 
 
+def stale_generated_outputs(desired: dict[Path, str]) -> list[Path]:
+    managed_dirs = [
+        KB / "generated" / "rules",
+        KB / "generated" / "rule-references",
+    ]
+    desired_paths = set(desired)
+    stale: list[Path] = []
+    for directory in managed_dirs:
+        for path in markdown_files(directory):
+            if path not in desired_paths:
+                stale.append(path)
+    return sorted(stale)
+
+
 def command_compile(args: argparse.Namespace) -> int:
     outputs = desired_outputs()
+    stale_outputs = stale_generated_outputs(outputs)
     drift = False
     for path, text in outputs.items():
         if args.check:
@@ -415,6 +430,12 @@ def command_compile(args: argparse.Namespace) -> int:
                     print(line)
             continue
         write(path, text)
+    for path in stale_outputs:
+        if args.check:
+            drift = True
+            print(f"STALE {path.relative_to(ROOT)}")
+            continue
+        path.unlink()
     if args.check and drift:
         return 1
     print("repo-kb compile passed" if args.check else "compiled repo-kb outputs")

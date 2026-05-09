@@ -13,6 +13,9 @@ sources:
   - kind: human-note
     id: 2026-05-09-repo-kb-as-raw-log-wiki
     path: .repo-kb/raw/human-notes/2026-05-09-repo-kb-as-raw-log-wiki.md
+  - kind: human-note
+    id: 2026-05-09-template-structure-confusion
+    path: .repo-kb/raw/human-notes/2026-05-09-template-structure-confusion.md
 last_verified: 2026-05-09
 ---
 
@@ -25,11 +28,13 @@ last_verified: 2026-05-09
 ## Current Practice
 
 - `init` creates `.repo-kb/` only.
-- `compile` writes `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rules/`.
+- `compile` writes `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rule-references/`.
 - `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, and other agent instruction files are manually or LLM-maintained project files.
 - When those files need updates, consult `.repo-kb/index.md`, relevant `.repo-kb/raw/` notes, pages, and `.repo-kb/generated/`.
 - Do not distribute agent instruction files as init templates.
 - Do not copy every generated reference into `.claude/rules/`; promote only stable, high-signal lessons.
+- Do not keep `.claude/` under `assets/templates/`; even unused empty template directories make init behavior ambiguous.
+- Name compiled rule candidates as `rule-references` so they are not confused with runnable agent rules.
 
 ## Rationale
 

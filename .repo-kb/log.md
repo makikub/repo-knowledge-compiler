@@ -58,3 +58,9 @@
 - Raw source: `.repo-kb/raw/human-notes/2026-05-09-repo-kb-as-raw-log-wiki.md`
 - Kind: `human-note`
 - Source id: `2026-05-09-repo-kb-as-raw-log-wiki`
+
+## [2026-05-09] ingest | Template structure confusion
+
+- Raw source: `.repo-kb/raw/human-notes/2026-05-09-template-structure-confusion.md`
+- Kind: `human-note`
+- Source id: `2026-05-09-template-structure-confusion`

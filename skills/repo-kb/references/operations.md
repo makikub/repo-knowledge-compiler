@@ -78,7 +78,7 @@ Check:
 1. Read `.repo-kb/config.yaml`.
 2. Compile active conventions into `.repo-kb/generated/claude-context.md`.
 3. Compile active review aspects into `.repo-kb/generated/review.md`.
-4. Compile path-scoped rule references into `.repo-kb/generated/rules/*.md` when applicable.
+4. Compile path-scoped rule references into `.repo-kb/generated/rule-references/*.md` when applicable.
 5. Do not write `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or other agent instruction files; use generated files as references for intentional LLM edits.
 6. Keep generated files reproducible. Manual edits belong in `.repo-kb/`.
 

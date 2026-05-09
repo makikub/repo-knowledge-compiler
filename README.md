@@ -11,7 +11,7 @@ Instead of putting every project rule into `CLAUDE.md` or `AGENTS.md`, each targ
 - conventions and invariants
 - code-review aspects
 
-Raw notes are the first landing place. Agents later synthesize durable patterns into wiki pages and review aspects, then compile concise reference outputs such as `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rules/`.
+Raw notes are the first landing place. Agents later synthesize durable patterns into wiki pages and review aspects, then compile concise reference outputs such as `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rule-references/`.
 
 Those generated files are reference material for a later promotion task. `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, and docs should be updated intentionally, for example during weekly or monthly repo-knowledge maintenance.
 
@@ -156,7 +156,7 @@ This creates and manages:
 .repo-kb/
 ```
 
-`CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, and other agent instruction files are not created, overwritten, or auto-populated. Ask the agent to update them intentionally during a separate maintenance task by consulting `.repo-kb/index.md`, relevant `.repo-kb/raw/` notes, `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rules/`.
+`CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, and other agent instruction files are not created, overwritten, or auto-populated. Ask the agent to update them intentionally during a separate maintenance task by consulting `.repo-kb/index.md`, relevant `.repo-kb/raw/` notes, `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rule-references/`.
 
 Commit both the installed project skill and the repository knowledge files when you want teammates and CI to use the same behavior.
 
