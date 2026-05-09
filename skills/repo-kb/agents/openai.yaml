@@ -1,0 +1,8 @@
+interface:
+  display_name: "Repo KB"
+  short_description: "Compile repo knowledge into AI guidance"
+  brand_color: "#2563EB"
+  default_prompt: "Use $repo-kb to initialize and compile repository knowledge guidance."
+
+policy:
+  allow_implicit_invocation: true

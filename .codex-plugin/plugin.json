@@ -1,0 +1,34 @@
+{
+  "name": "repo-knowledge-compiler",
+  "version": "0.1.0",
+  "description": "Maintain a repository knowledge base and compile it into agent instructions, review guidance, and path-scoped rules.",
+  "author": {
+    "name": "Masaki Kubota"
+  },
+  "license": "MIT",
+  "keywords": [
+    "repo-kb",
+    "llm-wiki",
+    "claude-code",
+    "codex",
+    "code-review"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Repo Knowledge Compiler",
+    "shortDescription": "Compile repo knowledge into agent instructions",
+    "longDescription": "A skill and lightweight CLI for adapting the LLM Wiki pattern to development repositories. It maintains .repo-kb as persistent Markdown knowledge and compiles it into CLAUDE.md, REVIEW.md, and path-scoped rules.",
+    "developerName": "Masaki Kubota",
+    "category": "Productivity",
+    "capabilities": [
+      "Write",
+      "Review"
+    ],
+    "defaultPrompt": [
+      "Use $repo-kb to initialize repository knowledge.",
+      "Use $repo-kb to ingest this review note.",
+      "Use $repo-kb to compile REVIEW.md."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

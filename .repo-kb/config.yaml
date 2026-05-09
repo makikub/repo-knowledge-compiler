@@ -1,0 +1,17 @@
+repo:
+  name: unknown
+outputs:
+  claude_md: CLAUDE.md
+  review_md: REVIEW.md
+  claude_rules_dir: .claude/rules/generated
+review:
+  default_language: ja
+  severity_levels:
+    - high
+    - medium
+    - low
+governance:
+  generated_files_require_compile: true
+  require_sources_for_review_aspects: true
+  max_claude_md_lines: 200
+  max_review_md_lines: 400
