@@ -1,5 +1,23 @@
 # Repo KB Operations
 
+## User-Facing Intent
+
+Users should not need to remember the Python helper path. Interpret these forms as repo-kb intent:
+
+```text
+/repo-kb ingest DBトランザクション境界の教訓: 外部API呼び出しを中に入れない
+/repo-kb ask DBトランザクション境界の注意点は？
+/repo-kb promote 今月の安定した知識だけ CLAUDE.md / REVIEW.md / rules に反映して
+```
+
+Map the request to the relevant workflow, then run deterministic helpers only when useful. When a vendored skill exists, prefer the repo-local wrapper:
+
+```bash
+.agents/skills/repo-kb/scripts/repo-kb ingest --kind human-note --title "Transaction boundary review lesson" --note "Transactions must not wrap network I/O."
+.agents/skills/repo-kb/scripts/repo-kb ask "What review aspects apply to src/api?"
+.agents/skills/repo-kb/scripts/repo-kb promote --target CLAUDE.md --target REVIEW.md
+```
+
 ## Initialize
 
 1. Read existing repository guidance: `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, docs, ADRs, package files, and CI.
@@ -14,8 +32,8 @@
 Vendored setup:
 
 ```bash
-python3 <installed-skill-dir>/scripts/repo_kb.py vendor --path .agents/skills/repo-kb
-python3 .agents/skills/repo-kb/scripts/repo_kb.py init
+<installed-skill-dir>/scripts/repo-kb vendor --path .agents/skills/repo-kb
+.agents/skills/repo-kb/scripts/repo-kb init
 ```
 
 ## Ingest
@@ -31,7 +49,7 @@ python3 .agents/skills/repo-kb/scripts/repo_kb.py init
 Use the helper for deterministic raw-source capture:
 
 ```bash
-python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest \
+.agents/skills/repo-kb/scripts/repo-kb ingest \
   --kind human-note \
   --title "Transaction boundary review lesson" \
   --note "Transactions must not wrap network I/O."
@@ -40,7 +58,7 @@ python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest \
 Use period-based PR comment ingestion when the source is GitHub review or conversation feedback:
 
 ```bash
-python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-pr-comments \
+.agents/skills/repo-kb/scripts/repo-kb ingest-pr-comments \
   --since 2026-05-01 \
   --until 2026-05-07 \
   --repo OWNER/REPO
@@ -51,7 +69,7 @@ This requires the `gh` CLI. The command stores PR review comments and PR convers
 Use directory ingestion for periodic repository paths such as ADRs, runbooks, support notes, or hand-maintained wiki exports:
 
 ```bash
-python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-directory \
+.agents/skills/repo-kb/scripts/repo-kb ingest-directory \
   --path docs/adr \
   --glob "*.md" \
   --kind adr
@@ -62,7 +80,7 @@ The command captures matching files into one raw source. Keep the source path na
 To create a draft review aspect while ingesting:
 
 ```bash
-python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest \
+.agents/skills/repo-kb/scripts/repo-kb ingest \
   --kind review-comment \
   --title "Transaction boundary" \
   --note "Do not call external APIs inside DB transactions." \
@@ -79,6 +97,12 @@ The generated review aspect starts as `draft`. Promote it to `active` only after
 2. Open only pages relevant to the question.
 3. Answer with local citations to `.repo-kb` pages or raw source paths.
 4. If the answer creates durable knowledge, propose saving it as a page or note.
+
+Use the helper when you want the deterministic workflow and starting references printed:
+
+```bash
+.agents/skills/repo-kb/scripts/repo-kb ask "What should I know before changing src/api?"
+```
 
 ## Lint
 
@@ -114,6 +138,12 @@ Use this only when the user asks for periodic maintenance, such as a weekly or m
 4. Keep promoted guidance concise and link back to `.repo-kb/` for background.
 5. Leave unresolved or low-confidence lessons in `.repo-kb/` rather than promoting them.
 
+Use the helper when you want the deterministic promotion checklist and starting references printed:
+
+```bash
+.agents/skills/repo-kb/scripts/repo-kb promote --target CLAUDE.md --target REVIEW.md --target .claude/rules
+```
+
 ## Periodic Maintenance
 
 Weekly maintenance should grow `.repo-kb/`, not project guidance files directly:
@@ -134,7 +164,7 @@ Monthly or explicit promotion should update project guidance by PR:
 Use the helper's operations summary when a user asks how to operate the system:
 
 ```bash
-python3 .agents/skills/repo-kb/scripts/repo_kb.py operations
+.agents/skills/repo-kb/scripts/repo-kb operations
 ```
 
 ## Review PR

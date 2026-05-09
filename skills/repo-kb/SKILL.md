@@ -30,6 +30,11 @@ Before editing a target repository:
 
 ## Operation Selection
 
+Users do not need to know the Python helper path. Treat `/repo-kb <operation> ...`,
+`repo-kb <operation> ...`, `$repo-kb ...`, and plain-language requests as user intent.
+Choose the matching operation, then run the deterministic helper only when it is useful
+for scaffolding, checks, collection, or workflow hints.
+
 - **Initialize**: create `.repo-kb/` in a repository that does not have one yet.
 - **Ingest**: add a PR, issue, review comment, incident note, ADR, chat/log excerpt, or human note into `.repo-kb/raw/`; synthesize into pages only when there is durable signal.
 - **Ingest directory**: capture selected repository files or a directory snapshot into raw notes for periodic synthesis.
@@ -47,15 +52,33 @@ Use `references/operations.md` for detailed workflows and `references/schema.md`
 The bundled script provides deterministic scaffolding and structural checks:
 
 ```bash
-python3 <installed-skill-dir>/scripts/repo_kb.py init
-python3 <installed-skill-dir>/scripts/repo_kb.py vendor
-python3 <installed-skill-dir>/scripts/repo_kb.py ingest --kind human-note --title "Title" --note "Sanitized note"
-python3 <installed-skill-dir>/scripts/repo_kb.py ingest-directory --path docs/adr --glob "*.md" --kind adr
-python3 <installed-skill-dir>/scripts/repo_kb.py ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
-python3 <installed-skill-dir>/scripts/repo_kb.py lint
-python3 <installed-skill-dir>/scripts/repo_kb.py compile
-python3 <installed-skill-dir>/scripts/repo_kb.py compile --check
-python3 <installed-skill-dir>/scripts/repo_kb.py operations
+<installed-skill-dir>/scripts/repo-kb init
+<installed-skill-dir>/scripts/repo-kb vendor
+<installed-skill-dir>/scripts/repo-kb ingest --kind human-note --title "Title" --note "Sanitized note"
+<installed-skill-dir>/scripts/repo-kb ingest-directory --path docs/adr --glob "*.md" --kind adr
+<installed-skill-dir>/scripts/repo-kb ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
+<installed-skill-dir>/scripts/repo-kb lint
+<installed-skill-dir>/scripts/repo-kb compile
+<installed-skill-dir>/scripts/repo-kb compile --check
+<installed-skill-dir>/scripts/repo-kb ask "Question"
+<installed-skill-dir>/scripts/repo-kb promote --target CLAUDE.md --target REVIEW.md
+<installed-skill-dir>/scripts/repo-kb operations
+```
+
+The repo-local wrapper hides the Python entrypoint when the skill is vendored:
+
+```bash
+.agents/skills/repo-kb/scripts/repo-kb ingest --kind human-note --title "Title" --note "Sanitized note"
+.agents/skills/repo-kb/scripts/repo-kb ask "What should I know before touching src/api?"
+.agents/skills/repo-kb/scripts/repo-kb promote --target CLAUDE.md --target REVIEW.md
+```
+
+For interactive agent usage, prefer user-facing intent:
+
+```text
+/repo-kb ingest DBトランザクション境界の教訓: 外部API呼び出しを中に入れない
+/repo-kb ask DBトランザクション境界の注意点は？
+/repo-kb promote 今月の安定した知識だけ CLAUDE.md / REVIEW.md / rules に反映して
 ```
 
 When installed through `gh skill`, treat the GitHub repository as the update source. It is acceptable to copy the skill into each target repository as a vendored repo-local skill.
@@ -70,17 +93,19 @@ Recommended target-repo layout:
 Use `vendor` from the installed skill to create or refresh the repo-local copy:
 
 ```bash
-python3 <installed-skill-dir>/scripts/repo_kb.py vendor --path .agents/skills/repo-kb
-python3 <installed-skill-dir>/scripts/repo_kb.py vendor --path .agents/skills/repo-kb --force
+<installed-skill-dir>/scripts/repo-kb vendor --path .agents/skills/repo-kb
+<installed-skill-dir>/scripts/repo-kb vendor --path .agents/skills/repo-kb --force
 ```
 
 After vendoring, repository-local automation can use:
 
 ```bash
-python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-directory --path docs/adr --glob "*.md" --kind adr
-python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
-python3 .agents/skills/repo-kb/scripts/repo_kb.py lint
-python3 .agents/skills/repo-kb/scripts/repo_kb.py compile --check
+.agents/skills/repo-kb/scripts/repo-kb ingest-directory --path docs/adr --glob "*.md" --kind adr
+.agents/skills/repo-kb/scripts/repo-kb ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
+.agents/skills/repo-kb/scripts/repo-kb lint
+.agents/skills/repo-kb/scripts/repo-kb compile --check
+.agents/skills/repo-kb/scripts/repo-kb ask "Question"
+.agents/skills/repo-kb/scripts/repo-kb promote --target CLAUDE.md
 ```
 
 Update flow: run `gh skill update` to refresh the installed source, then run `vendor --force` in each target repository that keeps a checked-in copy.
@@ -103,17 +128,17 @@ Avoid turning `CLAUDE.md` into the wiki. If a project has one, it should point t
 For weekly repo-knowledge growth, ingest recent raw evidence, ask an agent to synthesize only repeatable lessons, then run lint and compile:
 
 ```bash
-python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-directory --path docs/adr --glob "*.md" --kind adr
-python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
-python3 .agents/skills/repo-kb/scripts/repo_kb.py lint
-python3 .agents/skills/repo-kb/scripts/repo_kb.py compile
-python3 .agents/skills/repo-kb/scripts/repo_kb.py compile --check
+.agents/skills/repo-kb/scripts/repo-kb ingest-directory --path docs/adr --glob "*.md" --kind adr
+.agents/skills/repo-kb/scripts/repo-kb ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
+.agents/skills/repo-kb/scripts/repo-kb lint
+.agents/skills/repo-kb/scripts/repo-kb compile
+.agents/skills/repo-kb/scripts/repo-kb compile --check
 ```
 
 Use `operations` when the user asks how to run or automate repo-kb:
 
 ```bash
-python3 .agents/skills/repo-kb/scripts/repo_kb.py operations
+.agents/skills/repo-kb/scripts/repo-kb operations
 ```
 
 For monthly or explicit promotion, consult `.repo-kb/index.md`, raw sources, pages, review aspects, and generated references, then open a focused PR for concise updates to `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or docs. Do not promote every raw note.

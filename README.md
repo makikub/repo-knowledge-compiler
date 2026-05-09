@@ -132,22 +132,30 @@ After installing the skill into a target repository, ask your agent:
 $repo-kb を使って、このリポジトリを初期化して
 ```
 
-Or run the helper directly from the installed skill directory. Depending on the agent and scope, `gh skill` places the skill under an agent-specific directory such as `.claude/skills/repo-kb/` or a shared project directory such as `.agents/skills/repo-kb/`.
+Users should not need to remember Python paths. In agent chat, describe intent directly:
+
+```text
+/repo-kb ingest DBトランザクション境界の教訓: 外部API呼び出しを中に入れない
+/repo-kb ask DBトランザクション境界の注意点は？
+/repo-kb promote 今月の安定した知識だけ CLAUDE.md / REVIEW.md / rules に反映して
+```
+
+The agent maps those requests to the skill workflow and runs deterministic helpers when useful. You can also run the helper directly from the installed skill directory. Depending on the agent and scope, `gh skill` places the skill under an agent-specific directory such as `.claude/skills/repo-kb/` or a shared project directory such as `.agents/skills/repo-kb/`.
 
 Claude Code project install example:
 
 ```bash
-python3 .claude/skills/repo-kb/scripts/repo_kb.py init
-python3 .claude/skills/repo-kb/scripts/repo_kb.py lint
-python3 .claude/skills/repo-kb/scripts/repo_kb.py compile --check
+.claude/skills/repo-kb/scripts/repo-kb init
+.claude/skills/repo-kb/scripts/repo-kb lint
+.claude/skills/repo-kb/scripts/repo-kb compile --check
 ```
 
 Shared project install example:
 
 ```bash
-python3 .agents/skills/repo-kb/scripts/repo_kb.py init
-python3 .agents/skills/repo-kb/scripts/repo_kb.py lint
-python3 .agents/skills/repo-kb/scripts/repo_kb.py compile --check
+.agents/skills/repo-kb/scripts/repo-kb init
+.agents/skills/repo-kb/scripts/repo-kb lint
+.agents/skills/repo-kb/scripts/repo-kb compile --check
 ```
 
 This creates and manages:
@@ -165,8 +173,8 @@ Commit both the installed project skill and the repository knowledge files when 
 If you installed `repo-kb` at user scope but want a checked-in project copy, use the bundled `vendor` command:
 
 ```bash
-python3 <installed-skill-dir>/scripts/repo_kb.py vendor --path .agents/skills/repo-kb --force
-python3 .agents/skills/repo-kb/scripts/repo_kb.py init
+<installed-skill-dir>/scripts/repo-kb vendor --path .agents/skills/repo-kb --force
+.agents/skills/repo-kb/scripts/repo-kb init
 ```
 
 The usual update flow is:
@@ -174,8 +182,8 @@ The usual update flow is:
 ```bash
 gh skill update repo-kb
 cd /path/to/target-repo
-python3 <installed-skill-dir>/scripts/repo_kb.py vendor --path .agents/skills/repo-kb --force
-python3 .agents/skills/repo-kb/scripts/repo_kb.py compile --check
+<installed-skill-dir>/scripts/repo-kb vendor --path .agents/skills/repo-kb --force
+.agents/skills/repo-kb/scripts/repo-kb compile --check
 ```
 
 If you installed directly at project scope with `gh skill install ... --scope project`, this vendoring step is usually unnecessary.
@@ -185,12 +193,12 @@ If you installed directly at project scope with `gh skill install ... --scope pr
 From this repository root:
 
 ```bash
-python3 skills/repo-kb/scripts/repo_kb.py init
-python3 skills/repo-kb/scripts/repo_kb.py vendor --path /private/tmp/repo-kb-vendor-smoke --force
-python3 skills/repo-kb/scripts/repo_kb.py ingest --kind human-note --title "Smoke note" --note "This is a smoke-test note."
-python3 skills/repo-kb/scripts/repo_kb.py lint
-python3 skills/repo-kb/scripts/repo_kb.py compile
-python3 skills/repo-kb/scripts/repo_kb.py compile --check
+skills/repo-kb/scripts/repo-kb init
+skills/repo-kb/scripts/repo-kb vendor --path /private/tmp/repo-kb-vendor-smoke --force
+skills/repo-kb/scripts/repo-kb ingest --kind human-note --title "Smoke note" --note "This is a smoke-test note."
+skills/repo-kb/scripts/repo-kb lint
+skills/repo-kb/scripts/repo-kb compile
+skills/repo-kb/scripts/repo-kb compile --check
 ```
 
 The smoke-test ingest writes to `.repo-kb/raw/human-notes/`; remove that generated note before publishing if you do not want it in the repository history.
@@ -200,19 +208,21 @@ The smoke-test ingest writes to `.repo-kb/raw/human-notes/`; remove that generat
 Inside a target repository, first vendor the skill:
 
 ```bash
-python3 <installed-skill-dir>/scripts/repo_kb.py vendor --path .agents/skills/repo-kb
+<installed-skill-dir>/scripts/repo-kb vendor --path .agents/skills/repo-kb
 ```
 
 Then use the repo-local copy:
 
 ```bash
-python3 .agents/skills/repo-kb/scripts/repo_kb.py init
-python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest --kind log --title "Debugging session" --note "Sanitized raw log."
-python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-directory --path docs/adr --glob "*.md" --kind adr
-python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
-python3 .agents/skills/repo-kb/scripts/repo_kb.py lint
-python3 .agents/skills/repo-kb/scripts/repo_kb.py compile
-python3 .agents/skills/repo-kb/scripts/repo_kb.py compile --check
+.agents/skills/repo-kb/scripts/repo-kb init
+.agents/skills/repo-kb/scripts/repo-kb ingest --kind log --title "Debugging session" --note "Sanitized raw log."
+.agents/skills/repo-kb/scripts/repo-kb ingest-directory --path docs/adr --glob "*.md" --kind adr
+.agents/skills/repo-kb/scripts/repo-kb ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
+.agents/skills/repo-kb/scripts/repo-kb lint
+.agents/skills/repo-kb/scripts/repo-kb compile
+.agents/skills/repo-kb/scripts/repo-kb compile --check
+.agents/skills/repo-kb/scripts/repo-kb ask "What should I know before changing src/api?"
+.agents/skills/repo-kb/scripts/repo-kb promote --target CLAUDE.md --target REVIEW.md
 ```
 
 Use `$repo-kb` for semantic work such as deciding whether an ingested note has durable signal, merging it into existing pages, and promoting draft review aspects to active guidance.
@@ -220,7 +230,7 @@ Use `$repo-kb` for semantic work such as deciding whether an ingested note has d
 For operational help:
 
 ```bash
-python3 .agents/skills/repo-kb/scripts/repo_kb.py operations
+.agents/skills/repo-kb/scripts/repo-kb operations
 ```
 
 For weekly growth, ingest recent notes or selected directory snapshots, ingest PR comments for the target period, synthesize durable lessons into `.repo-kb/pages/` or `.repo-kb/review-aspects/`, then run lint and compile. `ingest-pr-comments` requires the `gh` CLI and stores PR review/conversation comments as raw review-comment evidence.

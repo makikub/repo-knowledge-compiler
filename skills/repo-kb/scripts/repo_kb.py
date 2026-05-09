@@ -506,22 +506,26 @@ def command_operations(_: argparse.Namespace) -> int:
             """
             Repo KB operating model
 
+            User-facing requests should be written as /repo-kb <operation> or plain language.
+            The agent should map that intent to the helper commands below and should not require
+            users to remember python paths.
+
             1. Capture raw evidence first.
                - Individual note or file:
-                 python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest --kind human-note --title "Title" --note "Sanitized note"
-                 python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest --kind log --title "Session log" --file /path/to/sanitized.md
+                 .agents/skills/repo-kb/scripts/repo-kb ingest --kind human-note --title "Title" --note "Sanitized note"
+                 .agents/skills/repo-kb/scripts/repo-kb ingest --kind log --title "Session log" --file /path/to/sanitized.md
                - Repository directory snapshot:
-                 python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-directory --path docs/adr --glob "*.md" --kind adr
+                 .agents/skills/repo-kb/scripts/repo-kb ingest-directory --path docs/adr --glob "*.md" --kind adr
                - PR comments for a period:
-                 python3 .agents/skills/repo-kb/scripts/repo_kb.py ingest-pr-comments --since YYYY-MM-DD --until YYYY-MM-DD --repo OWNER/REPO
+                 .agents/skills/repo-kb/scripts/repo-kb ingest-pr-comments --since YYYY-MM-DD --until YYYY-MM-DD --repo OWNER/REPO
 
             2. Synthesize durable lessons.
                Ask an agent to read recent .repo-kb/raw notes, update existing pages before creating new pages, and draft review aspects only when the lesson is repeatable.
 
             3. Compile and lint weekly.
-               python3 .agents/skills/repo-kb/scripts/repo_kb.py lint
-               python3 .agents/skills/repo-kb/scripts/repo_kb.py compile
-               python3 .agents/skills/repo-kb/scripts/repo_kb.py compile --check
+               .agents/skills/repo-kb/scripts/repo-kb lint
+               .agents/skills/repo-kb/scripts/repo-kb compile
+               .agents/skills/repo-kb/scripts/repo-kb compile --check
 
             4. Promote intentionally.
                Weekly or monthly, ask an agent to consult .repo-kb/index.md, raw notes, pages, review aspects, and generated references, then open a PR that updates only the concise guidance needed in CLAUDE.md, AGENTS.md, REVIEW.md, .claude/rules, or docs.
@@ -529,11 +533,73 @@ def command_operations(_: argparse.Namespace) -> int:
             Suggested weekly agent prompt:
               $repo-kb を使って、直近1週間の .repo-kb/raw とPRコメント取り込み結果を確認し、再発防止に効くものだけ pages/review-aspects に反映して。最後に lint と compile --check を実行して。
 
+            Suggested ask prompt:
+              /repo-kb ask このリポジトリでDBトランザクション境界の注意点は？
+
             Suggested monthly promotion prompt:
-              $repo-kb を使って、.repo-kb のactiveな知識とgeneratedを確認し、CLAUDE.md / REVIEW.md / rules / docs に反映すべき高シグナルなものだけPR化して。
+              /repo-kb promote .repo-kb のactiveな知識とgeneratedを確認し、CLAUDE.md / REVIEW.md / rules / docs に反映すべき高シグナルなものだけPR化して。
             """
         ).strip()
     )
+    return 0
+
+
+def existing_reference_paths() -> list[Path]:
+    candidates = [
+        KB / "index.md",
+        KB / "generated" / "claude-context.md",
+        KB / "generated" / "review.md",
+    ]
+    rule_references = markdown_files(KB / "generated" / "rule-references")
+    return [path for path in [*candidates, *rule_references] if path.exists()]
+
+
+def command_ask(args: argparse.Namespace) -> int:
+    if not KB.exists():
+        raise SystemExit(".repo-kb does not exist; run init before asking repository-knowledge questions")
+    question = " ".join(args.question).strip()
+    if not question:
+        raise SystemExit("ask requires a question, for example: ask 'What review aspects apply to src/api?'")
+
+    print("Repo KB ask request")
+    print("")
+    print(f"Question: {question}")
+    print("")
+    print("Agent workflow:")
+    print("1. Read `.repo-kb/index.md` first.")
+    print("2. Open only pages, review aspects, raw notes, or generated references relevant to the question.")
+    print("3. Answer with local citations to `.repo-kb` paths.")
+    print("4. If the answer exposes durable missing knowledge, propose an `ingest` or page update.")
+    print("")
+    print("Useful starting points:")
+    for path in existing_reference_paths():
+        print(f"- `{path.relative_to(ROOT)}`")
+    return 0
+
+
+def command_promote(args: argparse.Namespace) -> int:
+    if not KB.exists():
+        raise SystemExit(".repo-kb does not exist; run init before promotion")
+
+    targets = args.target or ["CLAUDE.md", "AGENTS.md", "REVIEW.md", ".claude/rules", "docs"]
+    print("Repo KB promotion request")
+    print("")
+    print("Promotion is intentionally LLM-maintained; this helper does not rewrite guidance files.")
+    print("")
+    print("Requested targets:")
+    for target in targets:
+        print(f"- `{target}`")
+    print("")
+    print("Agent workflow:")
+    print("1. Run `lint` and `compile --check`; run `compile` first if generated references are intentionally stale.")
+    print("2. Read `.repo-kb/index.md`, active pages, active review aspects, raw evidence for selected lessons, and generated references.")
+    print("3. Compare with current target guidance files.")
+    print("4. Promote only stable, high-signal guidance needed at session start, review time, or path-scoped rule time.")
+    print("5. Keep target files concise and link back to `.repo-kb/` for background.")
+    print("")
+    print("Useful starting points:")
+    for path in existing_reference_paths():
+        print(f"- `{path.relative_to(ROOT)}`")
     return 0
 
 
@@ -773,7 +839,7 @@ def command_compile(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="repo_kb.py")
+    parser = argparse.ArgumentParser(prog="repo-kb")
     sub = parser.add_subparsers(dest="command", required=True)
     init = sub.add_parser("init")
     init.set_defaults(func=command_init)
@@ -826,6 +892,22 @@ def main(argv: list[str] | None = None) -> int:
     compile_cmd = sub.add_parser("compile")
     compile_cmd.add_argument("--check", action="store_true")
     compile_cmd.set_defaults(func=command_compile)
+    ask = sub.add_parser(
+        "ask",
+        help="print the LLM workflow for answering a repository-knowledge question",
+    )
+    ask.add_argument("question", nargs="*", help="question to answer from .repo-kb")
+    ask.set_defaults(func=command_ask)
+    promote = sub.add_parser(
+        "promote",
+        help="print the LLM workflow for promoting stable .repo-kb knowledge into project guidance",
+    )
+    promote.add_argument(
+        "--target",
+        action="append",
+        help="guidance target to consider, for example CLAUDE.md, REVIEW.md, .claude/rules, or docs",
+    )
+    promote.set_defaults(func=command_promote)
     operations = sub.add_parser("operations", help="print recommended repo-kb operating workflows")
     operations.set_defaults(func=command_operations)
     args = parser.parse_args(argv)
