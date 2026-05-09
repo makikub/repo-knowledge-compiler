@@ -57,11 +57,8 @@ def copy_template(relative: str, destination: Path) -> None:
 
 def command_init(_: argparse.Namespace) -> int:
     copy_template(".repo-kb", KB)
-    for name in ("CLAUDE.md", "REVIEW.md"):
-        target = ROOT / name
-        if not target.exists():
-            copy_template(name, target)
     print("initialized .repo-kb templates")
+    print("project guidance files are not created automatically; use .repo-kb/generated/ as reference material")
     return 0
 
 
@@ -363,7 +360,7 @@ def compile_review() -> str:
     return "\n".join(lines)
 
 
-def compile_rules() -> dict[Path, str]:
+def compile_rule_references() -> dict[Path, str]:
     outputs: dict[Path, str] = {}
     for path, meta, body in active_markdown(KB / "review-aspects", "review-aspect"):
         applies = meta.get("applies_to", [])
@@ -380,11 +377,11 @@ def compile_rules() -> dict[Path, str]:
             "",
             f"# {meta.get('title', slug)}",
             "",
-            "Generated from `.repo-kb/review-aspects/`; update the source aspect and recompile.",
+            "Reference generated from `.repo-kb/review-aspects/`. If this should become an agent rule, ask an LLM to intentionally update the project rule file.",
             "",
         ])
         lines.append(questions or "Review the source aspect before making changes in these paths.")
-        outputs[ROOT / ".claude" / "rules" / "generated" / f"{slug}.md"] = "\n".join(lines).rstrip() + "\n"
+        outputs[KB / "generated" / "rules" / f"{slug}.md"] = "\n".join(lines).rstrip() + "\n"
     return outputs
 
 
@@ -392,9 +389,8 @@ def desired_outputs() -> dict[Path, str]:
     outputs = {
         KB / "generated" / "claude-context.md": compile_claude_context(),
         KB / "generated" / "review.md": compile_review(),
-        ROOT / "REVIEW.md": compile_review(),
     }
-    outputs.update(compile_rules())
+    outputs.update(compile_rule_references())
     return outputs
 
 

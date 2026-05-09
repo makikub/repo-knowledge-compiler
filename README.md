@@ -11,7 +11,7 @@ Instead of putting every project rule into `CLAUDE.md` or `AGENTS.md`, each targ
 - code-review aspects
 - generated agent guidance
 
-The skill then compiles that knowledge into concise outputs such as `CLAUDE.md`, `REVIEW.md`, and `.claude/rules/generated/`.
+The skill then compiles that knowledge into concise reference outputs such as `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rules/`.
 
 ## Repository Shape
 
@@ -152,12 +152,11 @@ This creates and manages:
 
 ```text
 .repo-kb/
-CLAUDE.md
-REVIEW.md
-.claude/rules/generated/
 ```
 
-Commit both the installed project skill and the generated repository knowledge files when you want teammates and CI to use the same behavior.
+`CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, and other agent instruction files are not created or overwritten automatically. Ask the agent to update them intentionally by consulting `.repo-kb/index.md`, `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rules/`.
+
+Commit both the installed project skill and the repository knowledge files when you want teammates and CI to use the same behavior.
 
 ## Optional Vendoring
 

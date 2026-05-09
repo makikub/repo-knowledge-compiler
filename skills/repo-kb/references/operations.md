@@ -5,10 +5,11 @@
 1. Read existing repository guidance: `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, docs, ADRs, package files, and CI.
 2. If the target repository should carry its own skill copy, vendor the skill into `.agents/skills/repo-kb/`.
 3. Create `.repo-kb/` from templates if missing.
-4. Seed `index.md` with discovered domains, conventions, and review topics.
-5. Seed `pages/conventions/` with stable repo practices only.
-6. Seed `review-aspects/` only for review checks that have evidence or explicit user confirmation.
-7. Compile outputs and ask the user to review generated guidance before relying on it.
+4. Do not create or overwrite `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or other agent instruction files automatically.
+5. Seed `index.md` with discovered domains, conventions, and review topics.
+6. Seed `pages/conventions/` with stable repo practices only.
+7. Seed `review-aspects/` only for review checks that have evidence or explicit user confirmation.
+8. Compile reference outputs and ask the user to review them before updating project guidance files.
 
 Vendored setup:
 
@@ -77,8 +78,9 @@ Check:
 1. Read `.repo-kb/config.yaml`.
 2. Compile active conventions into `.repo-kb/generated/claude-context.md`.
 3. Compile active review aspects into `.repo-kb/generated/review.md`.
-4. Write configured outputs such as `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, and `.claude/rules/generated/*.md`.
-5. Keep generated files reproducible. Manual edits belong in `.repo-kb/`.
+4. Compile path-scoped rule references into `.repo-kb/generated/rules/*.md` when applicable.
+5. Do not write `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or other agent instruction files; use generated files as references for intentional LLM edits.
+6. Keep generated files reproducible. Manual edits belong in `.repo-kb/`.
 
 ## Review PR
 

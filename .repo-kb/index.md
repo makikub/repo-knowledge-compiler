@@ -7,6 +7,7 @@
 ## Conventions
 
 - [Initial repository workflow](pages/conventions/initial-repository-workflow.md): Bootstrap conventions for using `.repo-kb`.
+- [Project guidance files](pages/conventions/project-guidance-files.md): Agent instruction files are LLM-maintained from `.repo-kb` references, not created or overwritten by init/compile.
 - [Skill distribution and dogfooding](pages/conventions/skill-distribution-and-dogfooding.md): How this skill is installed, optionally published, vendored into target repositories, and dogfooded here.
 
 ## Review Aspects

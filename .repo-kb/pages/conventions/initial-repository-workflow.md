@@ -19,7 +19,7 @@ Use `.repo-kb/` as the durable source for repository conventions, review aspects
 
 - Add durable knowledge to `.repo-kb/pages/` or `.repo-kb/review-aspects/`.
 - Keep raw evidence in `.repo-kb/raw/` when it is safe to store.
-- Regenerate `REVIEW.md` and `.repo-kb/generated/` after knowledge changes.
+- Regenerate `.repo-kb/generated/` after knowledge changes, then intentionally update `CLAUDE.md`, `AGENTS.md`, or `REVIEW.md` only if needed.
 
 ## Rationale
 

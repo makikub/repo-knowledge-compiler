@@ -23,8 +23,32 @@
 - Added knowledge page `.repo-kb/pages/architecture/repo-knowledge-compiler-concept.md`.
 - Updated `.repo-kb/index.md`.
 
+## [2026-05-09] integrate | Project guidance files are LLM-maintained
+
+- Added raw source `.repo-kb/raw/human-notes/2026-05-09-project-guidance-files-llm-maintained.md`.
+- Added knowledge page `.repo-kb/pages/conventions/project-guidance-files.md`.
+- Updated init/compile behavior to avoid creating or overwriting `CLAUDE.md`, `AGENTS.md`, and `REVIEW.md`.
+
+## [2026-05-09] integrate | Agent rule files are LLM-maintained
+
+- Added raw source `.repo-kb/raw/human-notes/2026-05-09-agent-rule-files-llm-maintained.md`.
+- Updated project guidance file policy to include `.claude/rules/` and other agent rule files.
+- Updated compile behavior to write rule references under `.repo-kb/generated/rules/` instead of `.claude/rules/`.
+
 ## [2026-05-09] ingest | Repo Knowledge Compiler concept
 
 - Raw source: `.repo-kb/raw/human-notes/2026-05-09-repo-kb-concept.md`
 - Kind: `human-note`
 - Source id: `2026-05-09-repo-kb-concept`
+
+## [2026-05-09] ingest | Project guidance files are LLM-maintained
+
+- Raw source: `.repo-kb/raw/human-notes/2026-05-09-project-guidance-files-llm-maintained.md`
+- Kind: `human-note`
+- Source id: `2026-05-09-project-guidance-files-llm-maintained`
+
+## [2026-05-09] ingest | Agent rule files are LLM-maintained
+
+- Raw source: `.repo-kb/raw/human-notes/2026-05-09-agent-rule-files-llm-maintained.md`
+- Kind: `human-note`
+- Source id: `2026-05-09-agent-rule-files-llm-maintained`

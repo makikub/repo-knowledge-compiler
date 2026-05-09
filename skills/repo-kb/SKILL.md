@@ -8,7 +8,7 @@ license: MIT
 
 ## Purpose
 
-Maintain `.repo-kb/` as a persistent Markdown knowledge base for a software repository, then compile the durable parts into concise agent-facing outputs such as `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, and `.claude/rules/generated/`.
+Maintain `.repo-kb/` as a persistent Markdown knowledge base for a software repository, then compile the durable parts into concise reference outputs such as `.repo-kb/generated/claude-context.md`, `.repo-kb/generated/review.md`, and `.repo-kb/generated/rules/`.
 
 The core pattern is:
 
@@ -57,9 +57,6 @@ Recommended target-repo layout:
 ```text
 .agents/skills/repo-kb/
 .repo-kb/
-CLAUDE.md
-REVIEW.md
-.claude/rules/generated/
 ```
 
 Use `vendor` from the installed skill to create or refresh the repo-local copy:
@@ -82,12 +79,14 @@ Update flow: run `gh skill update` to refresh the installed source, then run `ve
 
 Keep compiled files short and operational:
 
-- `CLAUDE.md` or `AGENTS.md`: bootstrap instructions, build/test basics, and imports to concise generated context.
-- `REVIEW.md`: review-only guidance compiled from active review aspects.
-- `.claude/rules/generated/*.md`: path-scoped rules with frontmatter `paths`.
+- `.repo-kb/generated/claude-context.md`: reference material for updating `CLAUDE.md`, `AGENTS.md`, or other agent instructions.
+- `.repo-kb/generated/review.md`: reference material for updating `REVIEW.md` or review-only guidance.
+- `.repo-kb/generated/rules/*.md`: reference material for updating `.claude/rules/` or other agent rule files.
 - `.repo-kb/generated/*`: intermediate compiled outputs and summaries.
 
-Avoid turning `CLAUDE.md` into the wiki. It should point to `.repo-kb/` and include only high-signal rules needed at session start.
+Do not create or overwrite `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or other agent instruction files automatically. Let the LLM update those project files intentionally by consulting `.repo-kb/index.md` and `.repo-kb/generated/`.
+
+Avoid turning `CLAUDE.md` into the wiki. If a project has one, it should point to `.repo-kb/` and include only high-signal rules needed at session start.
 
 ## Knowledge Governance
 
@@ -101,4 +100,4 @@ Mark aging knowledge with `last_verified`. Deprecate outdated rules instead of d
 
 - `references/operations.md`: task workflows for init, ingest, query, lint, compile, and review.
 - `references/schema.md`: recommended directory structure, frontmatter, and page anatomy.
-- `assets/templates/`: starter `.repo-kb/`, `CLAUDE.md`, and `REVIEW.md` templates.
+- `assets/templates/`: starter `.repo-kb/` templates.

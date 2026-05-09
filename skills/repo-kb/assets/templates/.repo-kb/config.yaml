@@ -1,9 +1,9 @@
 repo:
   name: unknown
 outputs:
-  claude_md: CLAUDE.md
-  review_md: REVIEW.md
-  claude_rules_dir: .claude/rules/generated
+  claude_context: .repo-kb/generated/claude-context.md
+  review_guidance: .repo-kb/generated/review.md
+  rule_references_dir: .repo-kb/generated/rules
 review:
   default_language: ja
   severity_levels:
@@ -12,6 +12,8 @@ review:
     - low
 governance:
   generated_files_require_compile: true
+  project_guidance_files_are_llm_maintained: true
+  agent_rule_files_are_llm_maintained: true
   require_sources_for_review_aspects: true
   max_claude_md_lines: 200
   max_review_md_lines: 400

@@ -6,9 +6,10 @@ This file is generated from `.repo-kb/review-aspects/`. Update review aspects, t
 
 ### Generated guidance drift
 Severity: `medium`
-Applies to: `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/generated/**`, `.repo-kb/**`
+Applies to: `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/**`, `.repo-kb/**`
 
-- Was the source knowledge updated before the generated guidance?
-- Does `repo-kb compile --check` pass?
+- Was the source knowledge updated before generated references or project guidance changed?
+- Does `repo-kb compile --check` pass for `.repo-kb/generated/`?
 - Are review aspects backed by sources or explicitly marked as team policy?
+- If agent instruction files changed, does the diff clearly follow `.repo-kb/index.md` or `.repo-kb/generated/`?
 Source: `.repo-kb/review-aspects/correctness/generated-guidance-drift.md`

@@ -22,7 +22,7 @@ Repo Knowledge Compiler adapts Karpathy's LLM Wiki pattern to software repositor
 - Treat raw sources as evidence and avoid silently rewriting them.
 - Let LLMs synthesize meaning, merge related lessons, and surface contradictions.
 - Let deterministic scripts handle structure, linting, reproducible compilation, and drift checks.
-- Compile concise outputs into `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/generated/`, and related agent guidance.
+- Compile concise reference outputs into `.repo-kb/generated/`, including proposed rule references, then let an LLM or human intentionally reflect them into `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, and related agent guidance when appropriate.
 - Keep `CLAUDE.md` as a short bootstrap instead of a large wiki.
 - Grow review guidance from repeated review findings, incidents, and explicit team decisions.
 - Keep the reusable skill repo-agnostic; target repositories own their `.repo-kb/` content.
@@ -39,7 +39,7 @@ The intended three-layer model is:
 
 - `raw/`: immutable or minimally edited source evidence such as PR notes, review comments, incident summaries, ADRs, and sanitized human notes.
 - `pages/` and `review-aspects/`: synthesized Markdown knowledge maintained by agents and reviewed by humans.
-- `generated/` and top-level guidance files: reproducible compiled outputs for agents and reviews.
+- `generated/`: reproducible compiled reference outputs for agents and reviews. Top-level guidance files are maintained intentionally from these references.
 
 The reusable skill should provide operations, templates, and helper scripts. It should not contain project-specific rules. Each target repository owns its `config.yaml`, `SCHEMA.md`, knowledge pages, review aspects, and generated outputs.
 
