@@ -46,6 +46,14 @@ Vendored setup:
 6. Update `.repo-kb/index.md` and append `.repo-kb/log.md`.
 7. Run lint and compile if generated reference outputs should change.
 
+Before marking an ingest session complete, run this synthesis check explicitly:
+
+- Does the new raw note (or any of the ingested documents) restate a theme that already appears in 2+ other raw notes / pages? If yes, update or create a cross-cutting page under `pages/` and link it from `index.md`.
+- Did you only create a `pages/references/<topic>-index.md` navigation page? An index alone does **not** complete ingest — re-scan for durable, repeatable lessons that belong in `pages/conventions/` or `review-aspects/`.
+- If no durable signal exists, record that decision in the raw note or `log.md` so the next session does not re-investigate.
+
+Synthesis into `pages/` and `review-aspects/` is never automated. `ingest*` and `compile` will not write there. See `pages/conventions/page-synthesis-workflow.md` for the policy.
+
 Use the helper for deterministic raw-source capture:
 
 ```bash
