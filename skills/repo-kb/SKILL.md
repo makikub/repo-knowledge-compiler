@@ -27,6 +27,7 @@ Before editing a target repository:
 2. If the task is review or bug-fix related, check recent history for affected files with `git log --oneline -- <file>`.
 3. Do not rewrite large generated outputs directly. Update `.repo-kb/` first, then compile.
 4. Treat secrets, customer data, private chat logs, and personal data as unsafe raw sources unless the user explicitly provides sanitized notes.
+5. If `scripts/repo-kb` returns `permission denied` (common after `vendor` or a fresh clone when `core.fileMode=false`), run `chmod +x <skill-dir>/scripts/repo-kb` once before retrying.
 
 ## Operation Selection
 
@@ -37,7 +38,7 @@ for scaffolding, checks, collection, or workflow hints.
 
 - **Initialize**: create `.repo-kb/` in a repository that does not have one yet.
 - **Ingest**: add a PR, issue, review comment, incident note, ADR, chat/log excerpt, or human note into `.repo-kb/raw/`; synthesize into pages only when there is durable signal.
-- **Ingest directory**: capture selected repository files or a directory snapshot into raw notes for periodic synthesis.
+- **Ingest directory**: capture selected repository files into a *concatenated, per-file truncated* raw markdown snapshot (default `--max-bytes=20000` per file). Use this for external or point-in-time evidence. When you want to track the **live original** files in-repo without duplication, prefer the **In-Repo Reference Ingest (symlink)** pattern below.
 - **Ingest PR comments**: collect GitHub PR review and conversation comments for a date range, then store them as raw review-comment evidence before synthesis.
 - **Query**: answer from `.repo-kb/index.md` and relevant pages, citing local paths.
 - **Lint**: check frontmatter, links, sources, generated drift, page size, and stale claims.
@@ -86,8 +87,10 @@ When installed through `gh skill`, treat the GitHub repository as the update sou
 Recommended target-repo layout:
 
 ```text
-.agents/skills/repo-kb/
-.repo-kb/
+.agents/skills/repo-kb/      # neutral / multi-agent layout
+# or
+.claude/skills/repo-kb/      # Claude Code project-local skill
+.repo-kb/                    # the knowledge base itself
 ```
 
 Use `vendor` from the installed skill to create or refresh the repo-local copy:
@@ -122,6 +125,38 @@ Keep compiled files short and operational:
 Do not create, overwrite, or auto-populate `CLAUDE.md`, `AGENTS.md`, `REVIEW.md`, `.claude/rules/`, or other agent instruction files during init, ingest, lint, or compile. Let the LLM update those project files intentionally during a separate promotion task by consulting `.repo-kb/index.md`, relevant `.repo-kb/raw/` notes, pages, and `.repo-kb/generated/`.
 
 Avoid turning `CLAUDE.md` into the wiki. If a project has one, it should point to `.repo-kb/` and include only high-signal rules needed at session start.
+
+## In-Repo Reference Ingest (symlink pattern)
+
+Use this pattern when the source of truth already lives in the repo (`docs/`, `.claude/skills/`, `.github/instructions/`, `.claude/rules/`, etc.) and you want `.repo-kb/` to reference rather than copy it.
+
+Steps:
+
+1. Create a category directory under `raw/` (e.g. `raw/docs/`, `raw/skills/`, `raw/copilot/`). Categories outside the standard `RAW_DIRS` (`pr/issues/incidents/adr/review-comments/logs/human-notes`) are allowed for symlink-based reference, since `ingest --kind ...` is not used for them.
+2. Create relative symlinks pointing to the in-repo source:
+
+   ```bash
+   ln -s ../../docs raw/docs
+   ln -s ../../../.claude/skills/code-review raw/skills/code-review
+   ```
+
+3. Add an index page under `pages/references/<topic>-index.md` listing the linked files via `../../raw/<category>/...` paths.
+4. Document the deviation in `.repo-kb/SCHEMA.md` under a **Local Deviations** section (path, purpose, dependent index page).
+5. Run `lint` and `compile --check` to confirm.
+
+Why this is safe:
+
+- pathlib `rglob` does **not** descend through directory symlinks, so lint never scans the symlink target's contents and never reports false-positive broken links from `.repo-kb`.
+- Page link existence checks (`(path.parent / link).resolve()`) **do** follow symlinks, so broken references from index pages are still detected.
+- Git stores symlinks as `mode 120000`, surviving clones (warn Windows users about `core.symlinks`).
+
+When to choose which:
+
+| Source                                                                        | Pattern                                              |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------- |
+| External PR/issue/chat/incident, point-in-time snapshot                       | `ingest` / `ingest-directory` (copies content)       |
+| In-repo `docs/`, skills, instructions, rules — kept as single source of truth | symlink                                              |
+| Mixed: a long-lived doc you want quoted, but might diverge from upstream      | `ingest-directory` once, then keep reading from raw/ |
 
 ## Periodic Operation
 
