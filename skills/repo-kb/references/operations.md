@@ -6,6 +6,7 @@ Users should not need to remember the Python helper path. Interpret these forms 
 
 ```text
 /repo-kb ingest DBトランザクション境界の教訓: 外部API呼び出しを中に入れない
+/repo-kb synthesize 直近1週間の raw を pages / review-aspects に反映して
 /repo-kb ask DBトランザクション境界の注意点は？
 /repo-kb promote 今月の安定した知識だけ CLAUDE.md / REVIEW.md / rules に反映して
 ```
@@ -52,7 +53,7 @@ Before marking an ingest session complete, run this synthesis check explicitly:
 - Did you only create a `pages/references/<topic>-index.md` navigation page? An index alone does **not** complete ingest — re-scan for durable, repeatable lessons that belong in `pages/conventions/` or `review-aspects/`.
 - If no durable signal exists, record that decision in the raw note or `log.md` so the next session does not re-investigate.
 
-Synthesis into `pages/` and `review-aspects/` is never automated. `ingest*` and `compile` will not write there. See `pages/conventions/page-synthesis-workflow.md` for the policy.
+Synthesis into `pages/` and `review-aspects/` is never automated. `ingest*` and `compile` will not write there. See `pages/conventions/page-synthesis-workflow.md` for the policy. To run the synthesis step explicitly, see the **Synthesize** section below.
 
 Use the helper for deterministic raw-source capture:
 
@@ -98,6 +99,25 @@ To create a draft review aspect while ingesting:
 ```
 
 The generated review aspect starts as `draft`. Promote it to `active` only after a human or agent has filled in trigger, good example, bad example, and source context.
+
+## Synthesize
+
+This is the LLM step between ingest and compile. The helper does not write pages or review aspects; it prints the workflow and the recent raw candidates so the agent has a stable entry point.
+
+```bash
+.agents/skills/repo-kb/scripts/repo-kb synthesize "weekly 2026-05-04..2026-05-11"
+```
+
+The scope argument is free-text. Pass a date range, a path glob, or a topic — whatever helps the agent narrow the raw notes it should read. Workflow:
+
+1. Read `.repo-kb/index.md` and `.repo-kb/log.md` to orient.
+2. Open the in-scope raw notes from `.repo-kb/raw/`.
+3. For each note, decide if it restates a theme already present in 2+ other raw notes or pages.
+   - If yes, update the existing page or review aspect.
+   - If no durable signal, record that decision in the raw note or `log.md` so future sessions skip it.
+4. Only create a new page when the lesson is genuinely new and repeatable. Index-only pages do not count as synthesis.
+5. Add `Sources:` entries pointing back to the raw notes you used.
+6. Run `lint` and `compile --check` to confirm.
 
 ## Query
 
@@ -154,11 +174,13 @@ Use the helper when you want the deterministic promotion checklist and starting 
 
 ## Periodic Maintenance
 
-Weekly maintenance should grow `.repo-kb/`, not project guidance files directly:
+Weekly maintenance should grow `.repo-kb/`, not project guidance files directly. The arguments live in `.repo-kb/config.yaml` under `weekly:` so the agent can run the routine deterministically:
 
-1. Ingest selected directory notes, incident summaries, or sanitized session logs with `ingest --file` or `ingest-directory`.
-2. Ingest PR comments for the target period with `ingest-pr-comments --since YYYY-MM-DD --until YYYY-MM-DD`.
-3. Synthesize repeatable lessons into existing pages and review aspects. Keep uncertain items in raw notes or `Open Questions`.
+1. For each entry in `weekly.ingest_directories`, run:
+   `ingest-directory --path <path> --glob <glob> --kind <kind>`.
+   `kind` must be one of `pr | issue | incident | adr | review-comment | log | human-note`.
+2. If `weekly.ingest_pr_comments.enabled` is true, compute `--since = today - window_days` and `--until = today`, then run `ingest-pr-comments --since ... --until ...`. Pass `--repo` only when `weekly.ingest_pr_comments.repo` is set; otherwise the script falls back to `gh repo view --json nameWithOwner`.
+3. Run `synthesize` and follow its printed workflow to merge repeatable lessons into existing pages and review aspects. Keep uncertain items in raw notes or `Open Questions`.
 4. Run `lint`, `compile`, and `compile --check`.
 5. Commit `.repo-kb/` and generated reference changes together when they are intentional.
 

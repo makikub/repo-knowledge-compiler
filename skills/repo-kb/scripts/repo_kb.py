@@ -520,7 +520,8 @@ def command_operations(_: argparse.Namespace) -> int:
                  .agents/skills/repo-kb/scripts/repo-kb ingest-pr-comments --since YYYY-MM-DD --until YYYY-MM-DD --repo OWNER/REPO
 
             2. Synthesize durable lessons.
-               Ask an agent to read recent .repo-kb/raw notes, update existing pages before creating new pages, and draft review aspects only when the lesson is repeatable.
+               .agents/skills/repo-kb/scripts/repo-kb synthesize "weekly <since>..<until>"
+               The helper prints the workflow and recent raw candidates; the agent reads them, updates existing pages before creating new pages, and drafts review aspects only when the lesson is repeatable.
 
             3. Compile and lint weekly.
                .agents/skills/repo-kb/scripts/repo-kb lint
@@ -570,6 +571,50 @@ def command_ask(args: argparse.Namespace) -> int:
     print("2. Open only pages, review aspects, raw notes, or generated references relevant to the question.")
     print("3. Answer with local citations to `.repo-kb` paths.")
     print("4. If the answer exposes durable missing knowledge, propose an `ingest` or page update.")
+    print("")
+    print("Useful starting points:")
+    for path in existing_reference_paths():
+        print(f"- `{path.relative_to(ROOT)}`")
+    return 0
+
+
+def recent_raw_paths(limit: int = 20) -> list[Path]:
+    raw_root = KB / "raw"
+    if not raw_root.exists():
+        return []
+    files = [path for path in raw_root.rglob("*.md") if path.is_file()]
+    files.sort(key=lambda path: path.stat().st_mtime, reverse=True)
+    return files[:limit]
+
+
+def command_synthesize(args: argparse.Namespace) -> int:
+    if not KB.exists():
+        raise SystemExit(".repo-kb does not exist; run init before synthesis")
+
+    scope = " ".join(args.scope).strip() if args.scope else "recent raw notes"
+
+    print("Repo KB synthesis request")
+    print("")
+    print(f"Scope: {scope}")
+    print("")
+    print("Synthesis is intentionally LLM-maintained; this helper does not write pages or review aspects.")
+    print("")
+    print("Agent workflow:")
+    print("1. Read `.repo-kb/index.md` and `.repo-kb/log.md` to orient.")
+    print("2. Open the in-scope raw notes under `.repo-kb/raw/` (see candidates below).")
+    print("3. For each raw note, decide whether it restates a theme that already appears in 2+ other raw notes or pages.")
+    print("   - If yes: update the existing page under `.repo-kb/pages/` or review aspect under `.repo-kb/review-aspects/`.")
+    print("   - If no durable signal: record that decision in the raw note or `log.md` so future sessions skip it.")
+    print("4. Only create a new page when there is genuinely new repeatable signal. Index-only pages do not count as synthesis.")
+    print("5. Add `Sources:` entries pointing back to the raw notes you used.")
+    print("6. Run `lint` and `compile --check` to confirm generated outputs converge.")
+    print("")
+    print("Recent raw candidates:")
+    candidates = recent_raw_paths()
+    if not candidates:
+        print("- (no raw notes found)")
+    for path in candidates:
+        print(f"- `{path.relative_to(ROOT)}`")
     print("")
     print("Useful starting points:")
     for path in existing_reference_paths():
@@ -908,6 +953,16 @@ def main(argv: list[str] | None = None) -> int:
         help="guidance target to consider, for example CLAUDE.md, REVIEW.md, .claude/rules, or docs",
     )
     promote.set_defaults(func=command_promote)
+    synthesize = sub.add_parser(
+        "synthesize",
+        help="print the LLM workflow for synthesizing raw notes into pages and review aspects",
+    )
+    synthesize.add_argument(
+        "scope",
+        nargs="*",
+        help="optional scope hint, for example a date range, path, or topic",
+    )
+    synthesize.set_defaults(func=command_synthesize)
     operations = sub.add_parser("operations", help="print recommended repo-kb operating workflows")
     operations.set_defaults(func=command_operations)
     args = parser.parse_args(argv)
