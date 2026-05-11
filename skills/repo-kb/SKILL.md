@@ -40,6 +40,7 @@ for scaffolding, checks, collection, or workflow hints.
 - **Ingest**: add a PR, issue, review comment, incident note, ADR, chat/log excerpt, or human note into `.repo-kb/raw/`; synthesize into pages only when there is durable signal.
 - **Ingest directory**: capture selected repository files into a *concatenated, per-file truncated* raw markdown snapshot (default `--max-bytes=20000` per file). Use this for external or point-in-time evidence. When you want to track the **live original** files in-repo without duplication, prefer the **In-Repo Reference Ingest (symlink)** pattern below.
 - **Ingest PR comments**: collect GitHub PR review and conversation comments for a date range, then store them as raw review-comment evidence before synthesis.
+- **Synthesize**: read recent raw notes and turn the repeatable signal into pages or review aspects. This is an LLM step; the helper only prints the workflow.
 - **Query**: answer from `.repo-kb/index.md` and relevant pages, citing local paths.
 - **Lint**: check frontmatter, links, sources, generated drift, page size, and stale claims.
 - **Compile**: regenerate concise outputs from `.repo-kb/`.
@@ -57,7 +58,8 @@ The bundled script provides deterministic scaffolding and structural checks:
 <installed-skill-dir>/scripts/repo-kb vendor
 <installed-skill-dir>/scripts/repo-kb ingest --kind human-note --title "Title" --note "Sanitized note"
 <installed-skill-dir>/scripts/repo-kb ingest-directory --path docs/adr --glob "*.md" --kind adr
-<installed-skill-dir>/scripts/repo-kb ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
+<installed-skill-dir>/scripts/repo-kb ingest-pr-comments --since 2026-05-01 --until 2026-05-07
+<installed-skill-dir>/scripts/repo-kb synthesize "since 2026-05-01"
 <installed-skill-dir>/scripts/repo-kb lint
 <installed-skill-dir>/scripts/repo-kb compile
 <installed-skill-dir>/scripts/repo-kb compile --check
@@ -78,9 +80,12 @@ For interactive agent usage, prefer user-facing intent:
 
 ```text
 /repo-kb ingest DBトランザクション境界の教訓: 外部API呼び出しを中に入れない
+/repo-kb synthesize 直近1週間の raw を pages / review-aspects に反映して
 /repo-kb ask DBトランザクション境界の注意点は？
 /repo-kb promote 今月の安定した知識だけ CLAUDE.md / REVIEW.md / rules に反映して
 ```
+
+`synthesize`, `ask`, and `promote` are LLM-driven; the helper only prints the workflow and starting references. The agent reads the printed steps, opens the listed files, and edits `.repo-kb/` directly.
 
 When installed through `gh skill`, treat the GitHub repository as the update source. It is acceptable to copy the skill into each target repository as a vendored repo-local skill.
 
@@ -160,11 +165,19 @@ When to choose which:
 
 ## Periodic Operation
 
-For weekly repo-knowledge growth, ingest recent raw evidence, ask an agent to synthesize only repeatable lessons, then run lint and compile:
+Weekly routine arguments live in `.repo-kb/config.yaml` under the `weekly:` key so the agent does not have to invent them. The agent reads that section and executes the steps in order. Concretely:
+
+1. For each entry in `weekly.ingest_directories`, run `ingest-directory --path <path> --glob <glob> --kind <kind>`. `kind` must be one of `pr | issue | incident | adr | review-comment | log | human-note`.
+2. If `weekly.ingest_pr_comments.enabled` is true, compute `--since = today - window_days` and `--until = today`, then run `ingest-pr-comments --since ... --until ...`. Pass `--repo` only when `weekly.ingest_pr_comments.repo` is set; otherwise the script falls back to `gh repo view --json nameWithOwner`.
+3. Run `synthesize` and act on its printed workflow: turn repeatable signal in recent raw notes into pages or review aspects. This is an LLM step; the helper does not write pages.
+4. Run `lint`, then `compile`, then `compile --check` to confirm generated references converge.
+
+Example (after the agent has read `config.yaml`):
 
 ```bash
 .agents/skills/repo-kb/scripts/repo-kb ingest-directory --path docs/adr --glob "*.md" --kind adr
-.agents/skills/repo-kb/scripts/repo-kb ingest-pr-comments --since 2026-05-01 --until 2026-05-07 --repo OWNER/REPO
+.agents/skills/repo-kb/scripts/repo-kb ingest-pr-comments --since 2026-05-04 --until 2026-05-11
+.agents/skills/repo-kb/scripts/repo-kb synthesize "weekly 2026-05-04..2026-05-11"
 .agents/skills/repo-kb/scripts/repo-kb lint
 .agents/skills/repo-kb/scripts/repo-kb compile
 .agents/skills/repo-kb/scripts/repo-kb compile --check

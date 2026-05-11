@@ -17,3 +17,20 @@ governance:
   require_sources_for_review_aspects: true
   max_claude_md_lines: 200
   max_review_md_lines: 400
+# Weekly routine parameters. Agents should read this section instead of inventing
+# arguments. Leave a list empty or omit a key to skip that step.
+weekly:
+  # Directory snapshots to ingest. kind must be one of:
+  # pr | issue | incident | adr | review-comment | log | human-note
+  ingest_directories: []
+  #  - path: docs/adr
+  #    glob: "*.md"
+  #    kind: adr
+  #  - path: docs/runbooks
+  #    glob: "*.md"
+  #    kind: log
+  ingest_pr_comments:
+    enabled: false
+    window_days: 7
+    # repo is optional; when omitted the script falls back to `gh repo view`.
+    # repo: OWNER/REPO
