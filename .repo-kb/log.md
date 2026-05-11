@@ -64,3 +64,15 @@
 - Raw source: `.repo-kb/raw/human-notes/2026-05-09-template-structure-confusion.md`
 - Kind: `human-note`
 - Source id: `2026-05-09-template-structure-confusion`
+
+## [2026-05-11] ingest | Page synthesis trigger feedback
+
+- Raw source: `.repo-kb/raw/human-notes/2026-05-11-page-synthesis-trigger.md`
+- Kind: `human-note`
+- Source id: `2026-05-11-page-synthesis-trigger`
+
+## [2026-05-11] integrate | Page synthesis is a manual LLM step
+
+- Added knowledge page `.repo-kb/pages/conventions/page-synthesis-workflow.md` (status: active).
+- Updated `skills/repo-kb/references/operations.md` Ingest section with an end-of-ingest synthesis checklist (recurring-theme trigger, index-only is not done, record no-signal decisions).
+- Updated `.repo-kb/index.md` with the new convention page.
